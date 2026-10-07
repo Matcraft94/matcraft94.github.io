@@ -73,6 +73,10 @@ Reported in the document's evaluation sections:
   explicit method reports **gain** importance, not SHAP — the source
   document's "SHAP" plot subtitle is an overclaim inherited from the original
   notebook.
+
+<div class="chart-block"><script type="application/json" class="chart-data">
+{"type":"bar","title":"XGBoost gain importance — one tabular cost field dominates; engineered wage ratio and text stems follow (log scale)","xLabel":"feature","yLabel":"gain importance (log)","labels":["InitialIncurredCalimsCost","CD_hand","WeeklyWagesPerHour","WeeklyWages","Age","CD_back","HoursWorkedPerWeek","CD_strain","CD_lacer","CD_struck"],"datasets":[{"label":"gain importance","data":[0.879,0.032,0.024,0.016,0.01,0.009,0.004,0.004,0.004,0.003]}],"yLog":true,"values":true,"source":"trabajo_final_E_ARIAS.html variable-importance table (test set)"}
+</script></div>
 - **Segment analysis** — errors were broken down by value band
   (<$5k, $5k–$20k, $20k–$50k, >$50k) and by quintile, showing consistent
   accuracy across train/test in the low/middle bands and the expected

@@ -108,6 +108,10 @@ from memory:
   (PyTorch warns explicitly in the notebook), so the reported figures average
   an 80×80 broadcast matrix rather than the true per-point MSE — direction
   (plateau, generalization gap) is meaningful, the absolute values less so.
+
+<div class="chart-block"><script type="application/json" class="chart-data">
+{"type":"bar","title":"Oregonator surrogate — train plateau vs held-out test loss (generalization gap; broadcast-MSE caveat applies)","xLabel":"evaluation set","yLabel":"MSE loss (broadcast caveat)","labels":["train (plateau, ~epoch 100)","test (held-out tail)"],"datasets":[{"label":"MSE","data":[0.078,0.346]}],"values":true,"source":"neural-pdes-solver/RDA-DN-NA.ipynb cells 23-24"}
+</script></div>
 - **SIR / COVID.** The SVI loss stayed flat at ≈ 1.597e7 across all printed
   iterations and the inferred β and γ both returned 0.20000000298 — exactly
   the initialization. The inference did not converge.

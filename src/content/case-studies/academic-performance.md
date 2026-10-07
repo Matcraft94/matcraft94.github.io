@@ -83,8 +83,13 @@ Numbers below are copied from the executed notebook outputs, not restated
 from memory:
 
 - **5-fold CV on the training set** (~708 validation students per fold,
-  707–708 across folds):
-  fold accuracies 0.856, 0.884, 0.879, 0.859, 0.864 →
+  707–708 across folds). Per-fold validation precision 0.856 / 0.884 /
+  0.879 / 0.859 / 0.864 (per-fold accuracy as printed: 0.86 / 0.88 / 0.88 /
+  0.86 / 0.86):
+
+<div class="chart-block"><script type="application/json" class="chart-data">
+{"type":"bar","title":"5-fold CV validation precision vs held-out test accuracy (885 students, never seen in training or search)","xLabel":"evaluation segment","yLabel":"score","labels":["fold 1","fold 2","fold 3","fold 4","fold 5","test (held-out)"],"datasets":[{"label":"precision / accuracy","data":[0.8559,0.8842,0.8785,0.8588,0.8642,0.88]}],"hline":0.8684,"values":true,"source":"academic_performance_prediction.ipynb cell outputs (fold metrics + final test report)"}
+</script></div>
   **mean 0.8683 ± 0.0111**, printed by the notebook as
   `Precisión media del CV: 0.8683 ± 0.0111`.
 - **Held-out test set** (885 students: 271 dropouts, 614 non-dropouts):
