@@ -89,12 +89,26 @@ benchmarked in `docs/PERFORMANCE_GUIDE.md`), the validation methodology
 (spectral radius checks, compensator GOF, time-series CV, bootstrap
 intervals), and the pipeline discipline.
 
-## Next step: real data
+## Real-data validation (Binance BTCUSDT)
 
-`scripts/download_binance_data.py` fetches public Binance trade history to
-run the same pipeline on data with no circular construction — the fair test
-the synthetic generator could never provide. Results will be reported here
-with the same honesty, in either direction.
+The fair test the synthetic generator could never provide, now executed
+(`scripts/validate_real_data.py`, full report in
+`docs/REAL_DATA_VALIDATION.md`): 73,375 real trades from 2026-10-05
+00:00–02:00 UTC.
+
+- **Estimation on real data:** bivariate UltraFast MLE on ~40K training
+  events converges to a stable process (spectral radius 0.28) — the
+  engine works on real order flow.
+- **Strategy on real prices:** 55 trades, **0% win rate**, net -0.27% —
+  a loss that equals the transaction-cost drag almost exactly. The
+  imbalance signal has no predictive power for next-second prices; the
+  synthetic "edge" was the injected drift, nothing more.
+
+The honest conclusion cuts both ways: the **estimation engine and
+validation methodology hold up on real data**, and the naive imbalance
+strategy is dead on arrival without a real predictive feature. A
+legitimate next step would be intensity-ratio signals from the fitted
+Hawkes parameters themselves, evaluated with the same harness.
 
 ## Reproduce
 
