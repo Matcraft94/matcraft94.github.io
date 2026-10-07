@@ -1,0 +1,56 @@
+---
+import '../styles/global.css';
+
+interface Props {
+  title: string;
+  description?: string;
+}
+
+const { title, description = 'Eduardo Arias — Mathematical Engineer & Data Scientist. Statistical rigor, production code, auditable AI.' } = Astro.props;
+const nav = [
+  { href: '/case-studies/', label: 'Case Studies' },
+  { href: '/publications/', label: 'Publications' },
+  { href: '/about/', label: 'About' },
+];
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content={description} />
+    <title>{title} · Eduardo Arias</title>
+  </head>
+  <body class="min-h-screen flex flex-col">
+    <header class="border-b border-ink-3">
+      <nav class="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
+        <a href="/" class="font-mono text-sm tracking-tight text-paper hover:text-accent transition-colors">
+          eduardo<span class="text-accent">.</span>arias
+        </a>
+        <div class="flex gap-6">
+          {nav.map((item) => (
+            <a href={item.href} class="text-sm text-muted hover:text-accent transition-colors">
+              {item.label}
+            </a>
+          ))}
+        </div>
+      </nav>
+    </header>
+    <main class="flex-1">
+      <slot />
+    </main>
+    <footer class="border-t border-ink-3 mt-24">
+      <div class="max-w-5xl mx-auto px-6 py-8 flex flex-col sm:flex-row gap-4 sm:items-center sm:justify-between text-sm text-muted">
+        <div class="font-mono text-xs">
+          Quito, Ecuador · UTC-5
+        </div>
+        <div class="flex gap-6">
+          <a href="https://github.com/Matcraft94" class="hover:text-accent transition-colors">GitHub</a>
+          <a href="https://www.linkedin.com/in/eduardo-arias-3e0/" class="hover:text-accent transition-colors">LinkedIn</a>
+          <a href="mailto:mat.eduardo.arias@outlook.com" class="hover:text-accent transition-colors">Email</a>
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>
