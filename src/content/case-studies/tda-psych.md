@@ -4,7 +4,7 @@ subtitle: "Topological Data Analysis for Psychometrics — persistent homology o
 description: "A Python library applying persistent homology, mapper graphs and network analysis to psychometric data, with a mathematical test suite that checks persistence computations against manifolds of known Betti numbers, and three reproducible case studies on simulated instruments with ground truth."
 category: "psychometrics"
 tags: ["tda", "persistent-homology", "mapper", "psychometrics", "irt", "topological-data-analysis", "pytest"]
-repo: "https://github.com/lucy-arias/tda-psych"
+repo: "https://github.com/Matcraft94/tda-psych"
 pubDate: 2026-03-07
 featured: false
 status: "draft"
@@ -60,9 +60,10 @@ Three design decisions define the project:
   (500 persons each); the test passes if the recovered dimensionality is
   within ±1 of the generative truth.
 - **Every published case study is a reproducible script** (`scripts/chapter4/`,
-  runnable via `make validate-cases`) over synthetic data with known
-  generative structure, with results, figures and seed metadata committed to
-  `results/`.
+  runnable directly: `python scripts/chapter4/case{1,2,3}_*.py`, plus
+  `make validate-seeds` for the seed replications) over synthetic data with
+  known generative structure, with results, figures and seed metadata
+  committed to `results/`.
 
 ## Evidence
 
@@ -82,10 +83,13 @@ claims I can verify from committed artifacts:
   exactly; the script's quality score is 0.975. Results were replicated
   across seeds 42, 123 and 456, all committed.
 - **Case 2 — Capacity for Pedagogical Agency scale** (simulated, 745
-  teachers × 32 items). The result I report is the negative one: across an
-  ε grid from 0.05 to 1.00 the item-level complex stays at H₀ = 32, H₁ = 0,
-  H₂ = 0 — items never merge into the globally connected construct the target
-  (H₀ = 1, H₁ = 4) hypothesizes. A 200-replicate bootstrap at ε = 0.52
+  teachers × 32 items). The result I report is the negative one: for
+  ε ≥ 0.10 across an ε grid up to 1.00 the item-level complex stays at
+  H₀ = 32, H₁ = 0, H₂ = 0 (the committed Betti curve shows an artifact
+  H₀ = 0 only at the ε = 0.05 endpoint) — items never merge into the
+  globally connected construct the target (H₀ = 1, H₁ = 4, H₂ = 1)
+  hypothesizes; the H₂ = 1 cavity is not recovered either. A 200-replicate
+  bootstrap at ε = 0.52
   reproduces β₀ = 32 in 200/200 replicates (H₁ = 0 in 196/200). The expected
   topology was not recovered within the explored grid, and the repository
   says so rather than tuning until it disappears.
@@ -96,8 +100,8 @@ claims I can verify from committed artifacts:
 
 - A working, documented library with Sphinx API reference, Docker builds,
   CI, and seed-controlled, end-to-end reproducible pipelines.
-- A compiled literature review and a research monograph (Arias, 2026) that
-  situate the software in the methodological landscape and document where TDA
+- A compiled literature review (committed to `research/`) that situates
+  the software in the methodological landscape and documents where TDA
   adds information beyond standard psychometrics.
 - Case 1 demonstrates the intended use case: a student-level complex whose
   3 persistent cycles line up with the three generative dimensions, stable

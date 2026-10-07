@@ -1,7 +1,7 @@
 ---
 title: "Neural PDEs Solver"
 subtitle: "Physics-informed networks and neural ODEs for forward and inverse differential-equation problems"
-description: "A notebook-based research sandbox covering PINNs with domain decomposition and energy penalties for the double pendulum, NLLSQ/VarPro inverse parameter estimation for a Poisson problem, augmented neural ODEs for reaction-diffusion dynamics, and SIR parameter inference with Pyro SVI — with all reported numbers taken from actual training logs."
+description: "A notebook-based research sandbox covering PINNs with domain decomposition and energy penalties for the double pendulum, NLLSQ/VarPro inverse parameter estimation for a Poisson problem, a neural surrogate for Oregonator reaction kinetics, and SIR parameter inference with Pyro SVI — with all reported numbers taken from actual training logs."
 category: "scientific-ml"
 tags: ["pinns", "neural-odes", "pdes", "pytorch", "inverse-problems", "scientific-machine-learning"]
 pubDate: 2025-06-15
@@ -20,7 +20,7 @@ metrics:
   - label: "VarPro α recovery"
     value: "failed"
     note: "converged to α ≈ −0.79 vs true α = 1 (178.7% error)"
-stack: ["Python", "PyTorch", "Pyro", "torchdiffeq / TorchDyn", "SciPy solve_ivp", "CUDA"]
+stack: ["Python", "PyTorch", "Pyro", "torchdiffeq (TorchDyn as reference)", "SciPy solve_ivp", "CUDA"]
 ---
 
 ## Problem
@@ -56,20 +56,23 @@ Five independent notebooks, each self-contained PyTorch/Pyro code:
 - **Inverse Poisson via separable least squares.** For
   u_xx + α·u_yy = f with manufactured solution u = sin(πx/2)·sin(πy/2) and
   unknown α (true value 1), two classical separable-nonlinear-least-squares
-  strategies are implemented on top of a random-hidden-layer network:
-  **NLLSQ** (alternating Adam on the linear output layer and on α) and
-  **VarPro** (exact elimination of the linear coefficients via the normal
-  equation, leaving a nonlinear problem only in the hidden features and α).
+  strategies are implemented on top of a random-hidden-layer network with
+  the hidden layer frozen:
+  **NLLSQ** (joint Adam over the linear output layer and α) and
+  **VarPro** (α eliminated in closed form via a scalar normal equation each
+  step; Adam trains only the linear output head).
   A GPU memory manager estimates feasible collocation-grid sizes before
   training (8 GB card; 120 points used, ~200 recommended max).
 - **SIR parameter inference with Pyro.** A stochastic variational inference
   (SVI, Trace_ELBO) fit of the transmission/recovery rates β, γ against US
   COVID-19 daily case data (`data/covid/us_covid19_daily.csv`), with a
   14-day delayed-recovery bookkeeping for the recovered compartment.
-- **Augmented neural ODEs for reaction–diffusion–advection.** The
+- **Neural surrogate for Oregonator (BZ) reaction kinetics.** The
   Belousov–Zhabotinsky reaction (Oregonator ODE system) is integrated with a
   hand-written RK4 to generate synthetic concentrations, and a network is
-  trained to predict species concentrations from (t, u) pairs.
+  trained to predict species concentrations from (t, u) pairs — a
+  regression surrogate, not a full reaction–diffusion–advection solve (the
+  notebook states the RDA simplification explicitly).
 - **Neural ODEs from first principles.** An educational notebook (in
   Spanish) building Euler/RK4 integrators, phase portraits, then NODEs with
   the adjoint method (torchdiffeq/TorchDyn), reproduced on three toy 2D
@@ -101,7 +104,10 @@ from memory:
   ≈ 5.7e-6 (100 epochs).
 - **Oregonator surrogate.** Training loss plateaued at ≈ 0.078 after ~100
   epochs (1000 epochs run); test loss 0.346 on the held-out tail of the
-  trajectory.
+  trajectory. Caveat: this MSE is computed on a `[80,1]` vs `[80]` broadcast
+  (PyTorch warns explicitly in the notebook), so the reported figures average
+  an 80×80 broadcast matrix rather than the true per-point MSE — direction
+  (plateau, generalization gap) is meaningful, the absolute values less so.
 - **SIR / COVID.** The SVI loss stayed flat at ≈ 1.597e7 across all printed
   iterations and the inferred β and γ both returned 0.20000000298 — exactly
   the initialization. The inference did not converge.
@@ -133,10 +139,9 @@ from memory:
   solver.
 - The VarPro run's failure to recover α is not a literature claim — it is
   what this particular implementation did on this problem instance.
-- In the double pendulum notebook the energy penalty's potential term is
-  written as a function of the time input rather than of the pendulum angle,
-  so that term acts as a soft regularizer, not as a strict physical energy
-  constraint.
+- The double pendulum energy penalty is computed over shuffled minibatch
+  order rather than the time-ordered trajectory, so it regularizes energy
+  variation only in expectation over batches, not pointwise along the orbit.
 - Results were produced on a single 8 GB consumer GPU; no seed sweeps,
   uncertainty quantification, or cross-run variance analysis were performed.
 - The notebooks are research code: warnings left unfixed, some Spanish
