@@ -95,14 +95,17 @@ from memory:
   0 to 0.024 at epoch 100 (of 200), trained on GPU. The comparison plots
   show the PINN solution against the `solve_ivp` reference for θ₁, θ₂, ω₁,
   ω₂.
-- **Neural ODE classification benchmarks.** Two moons with a plain NODE:
-  validation accuracy 1.0, test loss ≈ 2.2e-3 (200 epochs). Concentric
-  circles with a plain NODE: validation accuracy 0.97, test accuracy 0.94
-  (300 epochs) — the notebook documents how the model "cheats" by
-  topologically stretching the plane rather than truly separating the
-  annuli, matching the Dupont et al. (2019) analysis. Concentric circles
-  with an ANODE (1 augmented dimension): validation accuracy 1.0, test loss
-  ≈ 5.7e-6 (100 epochs).
+- **Neural ODE classification benchmarks.** Re-run 2026-10-07 on an
+  RTX 5070 Ti (seed 42); the notebook now persists metrics through an
+  added `FINAL_METRICS` print, since its progress bars alone store no
+  values. Two moons, plain NODE (200 epochs): test accuracy **1.0**,
+  test loss **2.18e-3**. Concentric circles, plain NODE (300 epochs):
+  test accuracy **0.97** but test loss **0.0715** — comparable accuracy
+  yet four orders of magnitude worse loss than the ANODE, the
+  quantitative fingerprint of the documented topological "cheat"
+  (stretching the plane instead of separating the annuli, matching
+  Dupont et al. 2019). Concentric circles, ANODE with one augmented
+  dimension (100 epochs): test accuracy **1.0**, test loss **5.69e-6**.
 - **Oregonator surrogate.** Training loss plateaued at ≈ 0.078 after ~100
   epochs (1000 epochs run); test loss 0.346 on the held-out tail of the
   trajectory. Caveat: this MSE is computed on a `[80,1]` vs `[80]` broadcast
