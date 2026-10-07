@@ -6,7 +6,7 @@ category: "ml-engineering"
 tags: ["lightgbm", "education", "classification", "feature-engineering", "gpu"]
 pubDate: 2024-05-12
 featured: false
-status: "draft"
+status: "published"
 metrics:
   - label: "Held-out test accuracy"
     value: "0.88"

@@ -6,7 +6,7 @@ category: "scientific-ml"
 tags: ["pinns", "neural-odes", "pdes", "pytorch", "inverse-problems", "scientific-machine-learning"]
 pubDate: 2025-06-15
 featured: false
-status: "draft"
+status: "published"
 metrics:
   - label: "Inverse Poisson α error (NLLSQ)"
     value: "3.7%"
