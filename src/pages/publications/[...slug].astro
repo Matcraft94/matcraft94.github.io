@@ -1,0 +1,27 @@
+---
+import Base from '../../layouts/Base.astro';
+import { getCollection, render } from 'astro:content';
+
+export async function getStaticPaths() {
+  const pubs = await getCollection('publications');
+  return pubs.map((p) => ({ params: { slug: p.id }, props: { pub: p } }));
+}
+
+const { pub } = Astro.props;
+const { Content } = await render(pub);
+---
+
+<Base title={pub.data.title}>
+  <article class="max-w-3xl mx-auto px-6 pt-16 pb-16">
+    <a href="/publications/" class="font-mono text-xs text-muted hover:text-accent transition-colors">← publications</a>
+    <div class="mt-6 font-mono text-xs text-accent-2 uppercase tracking-widest">{pub.data.venue}, {pub.data.year}</div>
+    <h1 class="mt-3 text-3xl font-bold leading-tight">{pub.data.title}</h1>
+    <p class="mt-4 text-muted">{pub.data.authors}</p>
+    {pub.data.link && (
+      <a href={pub.data.link} class="mt-5 inline-block font-mono text-sm text-accent hover:underline">paper ↗</a>
+    )}
+    <div class="mt-12 prose-invert">
+      <Content />
+    </div>
+  </article>
+</Base>

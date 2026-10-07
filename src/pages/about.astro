@@ -1,0 +1,72 @@
+---
+import Base from '../layouts/Base.astro';
+---
+
+<Base title="About">
+  <section class="max-w-3xl mx-auto px-6 pt-16 pb-8">
+    <h1 class="text-3xl font-bold">About</h1>
+  </section>
+  <section class="max-w-3xl mx-auto px-6 pb-20">
+    <p class="text-lg sm:text-xl text-paper leading-relaxed">
+      I'm Eduardo Arias, a Mathematical Engineer (Cum Laude, Escuela Politécnica Nacional) and data scientist
+      based in Quito, Ecuador. My working rule: <em class="text-accent not-italic">nothing reaches production without formal
+      evidence that justifies the method, and tests that guarantee the result.</em>
+    </p>
+
+    <div class="mt-14 pt-10 border-t border-ink-3 text-muted leading-relaxed">
+      <h2 class="font-mono text-xs text-muted uppercase tracking-widest mb-5">Current role</h2>
+      <p>
+        At CEIE (Center for Evaluation and Educational Innovation, Universidad UTE) I'm responsible for the
+        quantitative analytics behind institutional decisions: a ~20-repository production ecosystem covering
+        data capture → ETL → psychometric modeling (IRT/BIRT, equating, CFA) → BI → mass reporting.
+        Highlights include IRT equating with anchor items, doubly-robust causal inference (PSM/AIPW) over
+        ~5K students × 214 variables, dropout survival models, 8 semantic Power BI models, and fully local
+        LLM/RAG systems with per-call traceability.
+      </p>
+    </div>
+
+    <div class="mt-12 pt-10 border-t border-ink-3 text-muted leading-relaxed">
+      <h2 class="font-mono text-xs text-muted uppercase tracking-widest mb-5">Open source</h2>
+      <p>
+        Author of <a href="https://github.com/Matcraft94/Aurora-GLM" class="text-accent hover:underline">Aurora-GLM</a>,
+        a GLM/GAM/GAMM framework on PyPI with automated numerical validation against R and statsmodels
+        (max deviation 1.4e-13 across 20 comparisons), a 3,200+ test suite, and up to 141× GPU acceleration.
+        Also <a href="https://github.com/lucy-arias/tda-psych" class="text-accent hover:underline">tda-psych</a>,
+        applying topological data analysis to psychometrics.
+      </p>
+    </div>
+
+    <div class="mt-12 pt-10 border-t border-ink-3 text-muted leading-relaxed">
+      <h2 class="font-mono text-xs text-muted uppercase tracking-widest mb-5">Research</h2>
+      <p>
+        Co-author of <em>A biharmonic equation with discontinuous nonlinearities</em> (Electronic Journal of
+        Differential Equations, 2024) — existence and multiplicity results for higher-order PDEs with
+        discontinuous nonlinearities.
+      </p>
+    </div>
+
+    <div class="mt-12 pt-10 border-t border-ink-3 text-muted leading-relaxed">
+      <h2 class="font-mono text-xs text-muted uppercase tracking-widest mb-5">Previously</h2>
+      <ul class="list-disc pl-5 space-y-2">
+        <li><strong class="text-paper">Willay</strong> (2023–2024) — founded the ML area: insurance-eligibility index backend in production with geospatial (H3) features and probabilistic models (Pyro); led 2 analysts; AWS infrastructure.</li>
+        <li><strong class="text-paper">Grupo Saroquis</strong> (2022–2023) — ML/DL for algorithmic trading: automated buy/sell flows, pipeline automation for strategy execution and monitoring.</li>
+      </ul>
+    </div>
+
+    <div class="mt-12 pt-10 border-t border-ink-3 text-muted leading-relaxed">
+      <h2 class="font-mono text-xs text-muted uppercase tracking-widest mb-5">Education & certifications</h2>
+      <ul class="list-disc pl-5 space-y-2">
+        <li>B.Sc. Mathematical Engineering, Cum Laude — Escuela Politécnica Nacional</li>
+        <li>Specialization in Data Science for Banking & Finance — Florida Global University / GEM (320h, 2026)</li>
+        <li>Int'l Diploma in Data Engineering — BEPS Smart Research (720h, 2026)</li>
+        <li>Econometría Espacial — SOChE (2025)</li>
+        <li>Deep Learning with Python — CCDE (2022)</li>
+      </ul>
+    </div>
+
+    <div class="mt-12 pt-10 border-t border-ink-3 text-muted leading-relaxed">
+      <h2 class="font-mono text-xs text-muted uppercase tracking-widest mb-5">Languages</h2>
+      <p>Spanish (native), English (B2, actively improving for international collaboration).</p>
+    </div>
+  </section>
+</Base>
