@@ -6,7 +6,7 @@ category: "quantitative-finance"
 tags: ["lstm", "time-series", "walk-forward-validation", "risk-management", "backtesting", "pytorch", "code-audit"]
 pubDate: 2024-08-10
 featured: false
-status: "draft"
+status: "published"
 metrics:
   - label: "Backtest total return"
     value: "-0.20%"
