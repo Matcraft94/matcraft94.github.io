@@ -16,9 +16,9 @@ metrics:
   - label: "RMSE (train)"
     value: "22,217"
   - label: "Dataset"
-    value: "54,000 × 92"
-    note: "after feature engineering"
-stack: ["R", "tidymodels", "XGBoost", "tidytext", "SnowballC", "vip (SHAP)", "doParallel"]
+    value: "54,000 × ~115"
+    note: "after text feature engineering (rendered dim); tabular + ~100 text stems"
+stack: ["R", "tidymodels", "XGBoost", "tidytext", "SnowballC", "vip (gain importance)", "doParallel"]
 ---
 
 ## Problem
@@ -41,13 +41,15 @@ The full pipeline is implemented in R with tidymodels, in `trabajo_final_E_ARIAS
   mode; missing target values with group means by marital status.
 - **NLP on claim descriptions** — free-text `ClaimDescription` fields were
   lowercased, stripped of digits/punctuation, tokenized, stop-word removed, and
-  stemmed (SnowballC). The top ~100 stems and bigrams (min frequency 50) became
-  binary count features (prefixed `CD_`), plus a per-term severity analysis
-  (average claim cost by stem).
+  stemmed (SnowballC). The top ~100 stems (min frequency 50) became stem-count
+  features (prefixed `CD_`); bigrams were frequency-analyzed only, not used as
+  model features. A per-term severity analysis (average claim cost by stem)
+  accompanied the text features.
 - **Feature engineering** — `Days_To_Report` (accident-to-report lag),
   `WeeklyWagesPerHour` (wage-per-hour ratio), `DependentsTotal`, factor
-  encoding of marital status, and date columns dropped. Infinite values in the
-  target were capped at Q3 + 1.5×IQR bounds.
+  encoding of marital status, and date columns dropped. Defensive capping
+  code for infinite target values exists in the pipeline (none were found
+  in the data — a no-op on this dataset).
 - **Model** — XGBoost (`reg:squarederror`, L1/L2 = 0.01) tuned over a 25-point
   Latin hypercube grid of trees (100–500), `min_n` (5–20), `tree_depth`
   (3–8), `learn_rate` and `loss_reduction` (log-scaled), selected by 5-fold
@@ -62,10 +64,15 @@ Reported in the document's evaluation sections:
 - **Train**: RMSE 22,216.72, MAE 6,744.16. **Test**: RMSE 25,033.93,
   MAE 7,257.61 — a modest generalization gap indicating slight overfitting but
   stable behavior on unseen data.
-- **Variable importance (SHAP-based, via `vip`)** — the dominant predictors are
-  the initial estimated claim cost (`InitialIncurredCalimsCost`), weekly wages,
-  claimant age, and days-to-report, with text-derived `CD_` features
-  contributing beyond the tabular signal.
+- **Variable importance (gain-based, via `vip`)** — the dominant predictor by
+  far is the initial estimated claim cost (`InitialIncurredCalimsCost`, gain
+  0.879), followed by the engineered wage-per-hour ratio (0.024), weekly
+  wages, claimant age, and text stems (`CD_hand` 0.032 — second overall —
+  `CD_back`, `CD_strain`, `CD_lacer`, `CD_struck`). The text features carry
+  signal beyond the tabular fields. Note: `vip::vi()` for xgboost without an
+  explicit method reports **gain** importance, not SHAP — the source
+  document's "SHAP" plot subtitle is an overclaim inherited from the original
+  notebook.
 - **Segment analysis** — errors were broken down by value band
   (<$5k, $5k–$20k, $20k–$50k, >$50k) and by quintile, showing consistent
   accuracy across train/test in the low/middle bands and the expected
@@ -73,13 +80,14 @@ Reported in the document's evaluation sections:
 
 ## Results
 
-- A single XGBoost model trained on ~54k claims × 92 features reaches a test
+- A single XGBoost model trained on ~54k claims reaches a test
   RMSE of ≈25k USD and MAE of ≈7.3k USD on a heavy-tailed target.
 - The document positions the result as competitive with Kaggle leaderboard
   approaches, while noting the added value of uncertainty-aware evaluation.
 - Practical takeaways identified: initial incurred cost dominates the
-  prediction, report lag and wages are secondary drivers, and text features add
-  explanatory signal on top of structured fields.
+  prediction; the engineered wage-per-hour ratio and weekly wages are
+  secondary drivers; and text stems (led by `CD_hand`) add explanatory
+  signal on top of structured fields.
 
 ## Honest caveats
 

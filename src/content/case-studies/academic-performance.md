@@ -1,7 +1,7 @@
 ---
 title: "Academic Performance Prediction"
 subtitle: "Early-warning detection of student dropout with LightGBM"
-description: "A binary early-warning classifier for student dropout on the UCI 'Predict students' dropout and academic success' dataset: engineered academic and socioeconomic features, top-20 gain-based selection, random-search hyperparameter optimization under 5-fold CV, and an ensemble of fold models reaching 0.88 accuracy on 885 held-out students — with an honest look at the 0.79 dropout-recall caveat."
+description: "A binary early-warning classifier for student dropout on the UCI 'Predict students' dropout and academic success' dataset: 13 engineered academic and socioeconomic features, random-search hyperparameter optimization under 5-fold CV, and an ensemble of fold models reaching 0.88 accuracy on 885 held-out students — with an honest look at the 0.79 dropout-recall caveat and at the label-encoder leakage in the original notebook."
 category: "ml-engineering"
 tags: ["lightgbm", "education", "classification", "feature-engineering", "gpu"]
 pubDate: 2024-05-12
@@ -20,7 +20,7 @@ metrics:
   - label: "Dataset"
     value: "4,424 students"
     note: "32.1% dropout rate (1,421 students)"
-stack: ["Python", "LightGBM (GPU)", "scikit-learn", "PyTorch (CUDA/AMP)", "pandas", "Plotly"]
+stack: ["Python", "LightGBM (GPU)", "scikit-learn", "PyTorch AMP autocast", "pandas", "Plotly"]
 ---
 
 ## Problem
@@ -33,7 +33,7 @@ academic record, predict whether they will drop out.
 
 The data is the public UCI dataset *Predict students' dropout and academic
 success* — 4,424 students at Portuguese higher-education institutions, with
-37 attributes covering marital status, nationality, parental qualifications,
+34 attributes covering marital status, nationality, parental qualifications,
 scholarships, tuition status, macroeconomic indicators (unemployment,
 inflation, GDP), and per-semester curricular performance. Of the 4,424
 students, 1,421 (32.1%) dropped out. The original three-class target
@@ -49,15 +49,16 @@ EDA class and a modeling class:
   family-background breakdowns of dropouts (Plotly), including a
   course-level dropout-rate ranking and correlation analysis — used to
   understand the population before modeling, not to select features by eye.
-- **Feature engineering.** 14 derived features: first-semester approval and
+- **Feature engineering.** 13 derived features: first-semester approval and
   attendance rates, a grade-per-evaluation ratio, an academic load index, an
-  `economic_stress` interaction (unemployment × inflation / GDP), a
+  `economic_stress` interaction (unemployment × (1 + inflation) / (GDP + 1)), a
   `financial_status` composite (tuition paid × non-debtor), parental
   qualification sums, and scholarship-by-economic-stress interactions.
-- **Leakage-aware-ish preprocessing, with one flaw.** Six categorical
-  features were label-encoded; correlated features were pruned at a 0.75
-  threshold using a GPU correlation matrix; the top 20 features were kept by
-  LightGBM **gain importance** (1,000-tree probe model).
+- **Preprocessing, with one flaw (see caveats).** Six categorical
+  features were label-encoded. The notebook also *defines* top-k selection
+  (`select_features`) and multicollinearity pruning (`remove_multicollinearity`,
+  0.75 threshold) helpers — but never calls them: they are dead code, and the
+  model trains on the full encoded feature set.
 - **Hyperparameter search.** 100 random combinations sampled from a grid
   over `n_estimators`, `learning_rate`, `max_depth`, `num_leaves`,
   `colsample_bytree`, and `min_child_samples` — all with GOSS boosting and
@@ -81,7 +82,8 @@ predictions on the untouched 885.
 Numbers below are copied from the executed notebook outputs, not restated
 from memory:
 
-- **5-fold CV on the training set** (708 validation students per fold):
+- **5-fold CV on the training set** (~708 validation students per fold,
+  707–708 across folds):
   fold accuracies 0.856, 0.884, 0.879, 0.859, 0.864 →
   **mean 0.8683 ± 0.0111**, printed by the notebook as
   `Precisión media del CV: 0.8683 ± 0.0111`.
@@ -99,10 +101,6 @@ from memory:
 - A deployable early-warning score: every student receives a calibrated
   dropout probability (`Dropout_Prob`), with an ensemble-averaged estimate
   from five models rather than a single fit.
-- Feature ranking (gain) is dominated by first-semester academic behavior —
-  approved/enrolled unit ratios, grades, and evaluations — with tuition and
-  debtor status also near the top, matching the EDA intuition that the
-  first semester is the decisive window for intervention.
 - The modeling choices were validated rather than guessed: the random search
   showed flat response surfaces across the grid (e.g., 0.865–0.866 across
   all `n_estimators` values), i.e., performance is robust to the exact
@@ -121,11 +119,13 @@ from memory:
   semantics for LightGBM splits, the practical impact is negligible — but it
   is a protocol flaw, and a production version would fit encoders on the
   training fold only.
-- **Selection leakage inflates CV slightly.** Top-20 feature selection and
-  the hyperparameter search both used the full training set before CV, so
-  the 0.868 CV figure is mildly optimistic; the 0.88 test number, however,
-  comes from models that never saw the test set (beyond the encoding ID
-  issue above).
+- **Search-on-CV optimism.** The hyperparameter search was scored by the
+  same kind of 5-fold CV it later reports, all inside the training set, so
+  the 0.868 CV figure is mildly optimistic as an estimate of search-selected
+  configurations. No separate validation split was held out for selection.
+  (An earlier version of this case study described a top-20 feature
+  selection with the same issue — that selection exists only as unused
+  helper functions in the notebook and never ran.)
 - **Single split, single seed.** Results rest on one 80/20 split with
   `random_state=42`. The tight fold variance (±0.011) suggests stability,
   but a repeated-CV or nested-CV estimate would be more defensible.
@@ -133,6 +133,7 @@ from memory:
   enrollment period with macroeconomic context baked in; macro features
   (GDP, unemployment) would need retraining on contemporary data before any
   real deployment.
-- The PyTorch `Dataset`/`DataLoader` scaffolding and AMP autocast were used
-  for GPU plumbing around LightGBM; no neural network was actually trained —
-  the final model is gradient boosting throughout.
+- PyTorch AMP autocast was used for GPU plumbing around LightGBM; the
+  `Dataset`/`DataLoader` scaffolding in the notebook is never instantiated
+  and no neural network was trained — the final model is gradient boosting
+  throughout.

@@ -1,7 +1,7 @@
 ---
 title: "Market Risk Prediction with LSTM Walk-Forward Validation"
-subtitle: "Auditing and repairing an LSTM risk pipeline — six methodological defects found, fixed, and re-run with honest results"
-description: "End-to-end LSTM pipeline for short-horizon market risk prediction on 1-minute bars. While preparing this portfolio I audited the code and found six methodological defects — normalization leakage, wrong target column, a no-op gradient clip, a backtest that never used the trained model, and a Sharpe annualization off by ~2000×. All six are fixed and the pipeline re-run; the corrected result is an honest negative: cost drag, not alpha."
+subtitle: "Auditing and repairing an LSTM risk pipeline — seven methodological defects found, fixed, and re-run with honest results"
+description: "End-to-end LSTM pipeline for short-horizon market risk prediction on 1-minute bars. While preparing this portfolio the code was audited twice: first six defects (normalization leakage, wrong target column, no-op gradient clip, a backtest that never used the trained model, ~2000x Sharpe annualization) and then a seventh found by independent review — an RSI NaN bug whose dropna silently deleted 21% of bars and biased every result. All seven are fixed; the corrected pipeline shows the model has no edge: the backtest is buy-and-hold of a flat market."
 category: "quantitative-finance"
 tags: ["lstm", "time-series", "walk-forward-validation", "risk-management", "backtesting", "pytorch", "code-audit"]
 pubDate: 2024-08-10
@@ -9,17 +9,17 @@ featured: false
 status: "draft"
 metrics:
   - label: "Backtest total return"
-    value: "-37.3%"
-    note: "holdout, model signal, 0.1% cost per flip — cost drag explains it"
-  - label: "Position flips"
-    value: "14,922"
-    note: "≈ one per bar: the model signal overtrades to death"
+    value: "-0.20%"
+    note: "holdout ≈ buy-and-hold of a -0.18% flat market; ~5 position changes, costs negligible"
+  - label: "Max drawdown"
+    value: "-5.0%"
+    note: "intraperiod fluctuation of the always-long position"
   - label: "Fold val loss (mean ± std)"
-    value: "0.374 ± 0.486"
-    note: "3 walk-forward folds; middle regime folds badly"
+    value: "0.336 ± 0.436"
+    note: "3 walk-forward folds; the middle regime folds ~100x worse"
   - label: "Final holdout loss"
-    value: "5.43"
-    note: "regime shift: the model does not transfer to the last 20%"
+    value: "4.55"
+    note: "regime shift persists after the bias fix — the model does not transfer"
 stack: ["PyTorch (2-layer LSTM)", "scikit-learn TimeSeriesSplit", "pandas / NumPy feature engineering", "Plotly visualization"]
 ---
 
@@ -31,17 +31,18 @@ translate the forecast into risk-aware trading signals. The emphasis is
 evaluation discipline — walk-forward validation and a chronological
 hold-out — rather than a single optimistic backtest.
 
-Data: 94,858 one-minute bars of crash500 (2022-04-25 → 2022-06-30,
-24/7 market), reduced to 74,865 rows × 13 features after engineering.
-The 80/20 chronological split reserves 14,973 bars as a final hold-out
+Data: 94,858 one-minute bars of crash500 (2022-04-25 → 2022-06-30, 24/7
+market), reduced to 94,789 rows × 13 features after engineering (the RSI
+fix below restored the 21% of rows an earlier bug had silently deleted).
+The 80/20 chronological split reserves 18,958 bars as a final hold-out
 that no fold training ever sees.
 
-## Audit: six defects found while preparing this portfolio
+## Audit: seven defects found and fixed
 
-The original pipeline had architectural ambition but six concrete
-methodological defects. Each is fixed in the repo (commit `2f1a79c` on
-`develop`) and listed here because this is the actual capability the
-case study demonstrates — catching these is the job:
+This case study exists because the pipeline was audited — twice. The
+first pass found six defects; an independent reviewer then caught a
+seventh that invalidated the first re-run's interpretation. Each fix is
+in the repo (commits `2f1a79c` and the RSI follow-up on `develop`):
 
 | # | Defect | Fix |
 |---|---|---|
@@ -50,54 +51,66 @@ case study demonstrates — catching these is the job:
 | 3 | Normalization used the mean/std of whatever frame the dataset was built from, leaking validation and holdout statistics into every fold | scaler fitted on the **training fold only** (`MarketDataset.fit_scaler`) and passed everywhere; persisted with the model |
 | 4 | `clip_grad_norm_` was called inside `forward()` — before any backward pass, a no-op | moved to after `loss.backward()` |
 | 5 | The backtest was instantiated with **no model and no scaler**, so reported metrics came from the volatility-regime rule alone; the trained LSTM never participated | `BacktestStrategy` now receives the best fold model and scaler; predictions are de-normalized to price scale before signal generation |
-| 6 | "Sharpe" annualized with a hardcoded √252 on **1-minute bars** — an inflation of ~2000×; drawdown used a summed-return curve | `periods_per_year` is an explicit parameter (525,960 here); compounded equity curve for return and drawdown |
+| 6 | "Sharpe" annualized with a hardcoded √252 on **1-minute bars** — an inflation of ~2000×; drawdown used a summed-return curve | `periods_per_year` is an explicit parameter (525,600 here); compounded equity curve for return and drawdown |
+| 7 | **RSI returned NaN whenever the average loss was zero** — including strong uptrends where RSI is 100. A downstream `dropna()` then deleted **19,944 bars (~21%)**, concentrated in upward stretches: every fold, the holdout, and the backtest ran on a biased subsample whose compounded return was -37% while the real market was -0.18% | `rs = gain / loss` under errstate: gain/0 → ∞ → RSI = 100; only genuine 0/0 stays NaN. The full 94,789-row frame is retained |
 
-Reproducibility was also pinned: `torch`/`numpy` seeds set to 42.
+Defect 7 is the instructive one: it was invisible in any single number —
+losses converged, plots looked reasonable — and it manufactured a market
+trend that did not exist. It surfaced only when a reviewer recomputed the
+backtest arithmetic and asked why a "risk model" was long 100% of the
+time in a crashing frame.
 
-## Results after the fix (verified re-run)
+## Results after all fixes (verified re-run, seed 42)
 
 Walk-forward folds (chronological, expanding window):
 
 <div class="chart-block"><script type="application/json" class="chart-data">
-{"type":"bar","title":"Validation loss by fold and final holdout (normalized MSE on next close, log scale)","xLabel":"evaluation segment","yLabel":"MSE loss (log)","labels":["fold 1 val","fold 2 val","fold 3 val","final holdout"],"datasets":[{"label":"validation loss","data":[0.016,1.0605,0.0443,5.4251]}],"yLog":true,"values":true,"source":"market-risk-analysis re-run, seed 42, commit 2f1a79c"}
+{"type":"bar","title":"Validation loss by fold and final holdout (normalized MSE on next close, log scale)","xLabel":"evaluation segment","yLabel":"MSE loss (log)","labels":["fold 1 val","fold 2 val","fold 3 val","final holdout"],"datasets":[{"label":"validation loss","data":[0.007,0.9514,0.0491,4.5454]}],"yLog":true,"values":true,"source":"market-risk-analysis re-run after RSI fix, seed 42"}
 </script></div>
 
-- Fold validation losses 0.016 / 1.061 / 0.044 (mean 0.374 ± 0.486). The
-  middle fold fails by an order of magnitude — a volatility regime the
-  model trained on the earlier period cannot represent.
-- Final holdout loss **5.43**: distribution shift in the last 20% is
-  severe enough that the model is off the training manifold entirely.
+- Fold validation losses 0.0070 / 0.9514 / 0.0491 (mean 0.336 ± 0.436).
+  The middle fold fails by **two orders of magnitude** — a volatility
+  regime the model trained on earlier data cannot represent. This
+  regime instability is real and survives the bias fix.
+- Final holdout loss **4.55**: the last 20% of the series is far outside
+  the training distribution. The model's predictions there are
+  effectively unmoored.
 
-Backtest on the holdout, now actually driven by the LSTM:
+Backtest on the holdout, driven by the LSTM:
 
-- **14,922 position flips over 14,913 bars** — the ±1% prediction band
-  flips the signal almost every bar.
-- **Total return -37.3%**, max drawdown -37.3%. With a 0.1% cost per
-  flip, the cost drag alone is ≈ 15 points of pure bleed; the strategy
-  loses to friction, not to direction.
-- Win rate 86.8% of bars positive — a classic overtrading pathology:
-  small per-bar wins, large per-flip costs. The annualized Sharpe at
-  the true bar frequency (525,600/yr) is -48; the number is reported
-  only to show the wiring, not as a performance claim.
+- The model signal is **long ~100% of the holdout** (14,917 long bars,
+  5 short, 51 flat — about five position changes in total). This is not
+  overtrading; it is a prediction that sits just above the long
+  threshold almost everywhere.
+- **Total return -0.20%** against a market that returned -0.18%
+  close-to-close over the same period. Transaction costs (0.1% per
+  change) are negligible at five changes. **Max drawdown -5.0%**
+  reflects the intraperiod fluctuation of an always-long position.
+- The honest reading: corrected for the selection bias, the strategy is
+  buy-and-hold of a flat market. The model contributes no directional
+  edge at the 1-minute horizon on this instrument — an earlier "-37%
+  by cost drag" narrative was an artifact of defect 7, and the first
+  draft of this very case study repeated that artifact until the
+  reviewer caught it.
 
 ## Honest caveats
 
-- The model signal as specified (threshold on next-close prediction) has
-  no edge at 1-minute horizon on this instrument — the honest result is
-  negative, and the corrected pipeline now *produces* that result instead
-  of hiding it.
 - The corrected numbers replace an earlier README that cited Sharpe and
   drawdown figures traceable to no surviving output; those claims were
   dropped in the audit, not repeated.
+- The win-rate-style figure printed by the backtest (positive-return
+  bars / non-zero bars, 0.895) describes the underlying market, not
+  model skill — the position barely changes.
 - What survives scrutiny: the evaluation design (walk-forward +
   untouched holdout), per-fold checkpointing, schema-validated feature
-  engineering, a cost-aware backtest, and an audit trail that converts
-  a broken pipeline into a verifiable negative result.
+  engineering, a cost-aware backtest, and an audit trail that survived
+  its own audit — including a correction of this case study's first
+  published interpretation.
 
 ## Reproduce
 
 ```bash
 cd market-risk-analysis
-uv venv .venv && uv pip install -e .  # torch CPU, pandas, scikit-learn, plotly
-python main.py   # ~10 min on CPU; seeds pinned
+uv sync                 # pyproject.toml pins torch, pandas, scikit-learn, plotly
+uv run python main.py   # ~15 min on CPU; seeds pinned to 42
 ```
