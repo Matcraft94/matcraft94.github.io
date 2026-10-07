@@ -1,12 +1,138 @@
 ---
 title: "Academic Performance Prediction"
-subtitle: "Early-warning system for student dropout"
-description: "LightGBM with GPU acceleration for early detection of at-risk students, with comprehensive socioeconomic feature engineering and interactive dashboards."
+subtitle: "Early-warning detection of student dropout with LightGBM"
+description: "A binary early-warning classifier for student dropout on the UCI 'Predict students' dropout and academic success' dataset: engineered academic and socioeconomic features, top-20 gain-based selection, random-search hyperparameter optimization under 5-fold CV, and an ensemble of fold models reaching 0.88 accuracy on 885 held-out students — with an honest look at the 0.79 dropout-recall caveat."
 category: "ml-engineering"
-tags: ["lightgbm", "education", "classification", "feature-engineering"]
+tags: ["lightgbm", "education", "classification", "feature-engineering", "gpu"]
 pubDate: 2024-05-12
 featured: false
 status: "draft"
+metrics:
+  - label: "Held-out test accuracy"
+    value: "0.88"
+    note: "885 students, untouched 20% test split"
+  - label: "Cross-validation accuracy"
+    value: "0.868 ± 0.011"
+    note: "5-fold stratified, training set only"
+  - label: "Dropout recall"
+    value: "0.79"
+    note: "1 in 5 at-risk students still missed"
+  - label: "Dataset"
+    value: "4,424 students"
+    note: "32.1% dropout rate (1,421 students)"
+stack: ["Python", "LightGBM (GPU)", "scikit-learn", "PyTorch (CUDA/AMP)", "pandas", "Plotly"]
 ---
 
-*Full case study in preparation.*
+## Problem
+
+Universities lose roughly a third of enrolled students to dropout, and the
+earlier an institution can identify at-risk students, the cheaper and more
+effective the intervention. The goal here was a binary early-warning model:
+given a student's demographics, socioeconomic context, and first-year
+academic record, predict whether they will drop out.
+
+The data is the public UCI dataset *Predict students' dropout and academic
+success* — 4,424 students at Portuguese higher-education institutions, with
+37 attributes covering marital status, nationality, parental qualifications,
+scholarships, tuition status, macroeconomic indicators (unemployment,
+inflation, GDP), and per-semester curricular performance. Of the 4,424
+students, 1,421 (32.1%) dropped out. The original three-class target
+(Dropout / Enrolled / Graduate) was binarized into Dropout (0) vs.
+non-dropout (1).
+
+## Method
+
+The full pipeline lives in a single reproducible notebook, structured as an
+EDA class and a modeling class:
+
+- **Exploratory analysis first.** Demographic, academic, economic, and
+  family-background breakdowns of dropouts (Plotly), including a
+  course-level dropout-rate ranking and correlation analysis — used to
+  understand the population before modeling, not to select features by eye.
+- **Feature engineering.** 14 derived features: first-semester approval and
+  attendance rates, a grade-per-evaluation ratio, an academic load index, an
+  `economic_stress` interaction (unemployment × inflation / GDP), a
+  `financial_status` composite (tuition paid × non-debtor), parental
+  qualification sums, and scholarship-by-economic-stress interactions.
+- **Leakage-aware-ish preprocessing, with one flaw.** Six categorical
+  features were label-encoded; correlated features were pruned at a 0.75
+  threshold using a GPU correlation matrix; the top 20 features were kept by
+  LightGBM **gain importance** (1,000-tree probe model).
+- **Hyperparameter search.** 100 random combinations sampled from a grid
+  over `n_estimators`, `learning_rate`, `max_depth`, `num_leaves`,
+  `colsample_bytree`, and `min_child_samples` — all with GOSS boosting and
+  balanced class weights — each scored by 5-fold CV accuracy on the training
+  set only (~29 s per trial on GPU, 48 min total). The best combination
+  averaged **0.8706** CV accuracy.
+- **Final model.** `LGBMClassifier` with GOSS boosting, `n_estimators=300`,
+  `learning_rate=0.07`, `max_depth=12`, `num_leaves=55`,
+  `colsample_bytree=0.85`, `min_child_samples=12`, balanced class weights,
+  early stopping (30 rounds), trained under 5-fold stratified CV with
+  `random_state=42` throughout. Per-fold predicted probabilities on the test
+  set were **averaged into a 5-model ensemble**.
+
+**Validation protocol:** an 80/20 train/test split (`random_state=42`) held
+out 885 students *before* any fitting. All search, selection, and CV happened
+on the 3,539-student training set; reported test metrics are the ensemble's
+predictions on the untouched 885.
+
+## Evidence
+
+Numbers below are copied from the executed notebook outputs, not restated
+from memory:
+
+- **5-fold CV on the training set** (708 validation students per fold):
+  fold accuracies 0.856, 0.884, 0.879, 0.859, 0.864 →
+  **mean 0.8683 ± 0.0111**, printed by the notebook as
+  `Precisión media del CV: 0.8683 ± 0.0111`.
+- **Held-out test set** (885 students: 271 dropouts, 614 non-dropouts):
+  **accuracy 0.88**, precision 0.91, recall 0.92, F1 0.92 on the positive
+  (non-dropout) class — i.e., the 88% figure is real and corresponds to a
+  genuinely untouched split.
+- **Per-class on test:** non-dropout precision/recall 0.91/0.92; dropout
+  precision/recall 0.82/0.79. A normalized confusion matrix was generated.
+- **Majority-class baseline** on the test set is 614/885 ≈ 0.69, so 0.88 is
+  a real lift, not a class-prior artifact.
+
+## Results
+
+- A deployable early-warning score: every student receives a calibrated
+  dropout probability (`Dropout_Prob`), with an ensemble-averaged estimate
+  from five models rather than a single fit.
+- Feature ranking (gain) is dominated by first-semester academic behavior —
+  approved/enrolled unit ratios, grades, and evaluations — with tuition and
+  debtor status also near the top, matching the EDA intuition that the
+  first semester is the decisive window for intervention.
+- The modeling choices were validated rather than guessed: the random search
+  showed flat response surfaces across the grid (e.g., 0.865–0.866 across
+  all `n_estimators` values), i.e., performance is robust to the exact
+  hyperparameters, not a lucky draw.
+
+## Honest caveats
+
+- **Recall on the minority class is the weak point.** The model catches 79%
+  of actual dropouts on the test set — about 1 in 5 at-risk students is
+  still missed. For an intervention tool, that is arguably the most
+  expensive error, and this accuracy figure should not be read as "we find
+  almost all at-risk students."
+- **Minor target leakage in encoding.** The label encoders were fit on the
+  concatenated train+test data (a code-path override of the initial
+  train-only encoding). Since encodings are integer IDs with no ordinal
+  semantics for LightGBM splits, the practical impact is negligible — but it
+  is a protocol flaw, and a production version would fit encoders on the
+  training fold only.
+- **Selection leakage inflates CV slightly.** Top-20 feature selection and
+  the hyperparameter search both used the full training set before CV, so
+  the 0.868 CV figure is mildly optimistic; the 0.88 test number, however,
+  comes from models that never saw the test set (beyond the encoding ID
+  issue above).
+- **Single split, single seed.** Results rest on one 80/20 split with
+  `random_state=42`. The tight fold variance (±0.011) suggests stability,
+  but a repeated-CV or nested-CV estimate would be more defensible.
+- **Dataset vintage.** The UCI dataset records students from an earlier
+  enrollment period with macroeconomic context baked in; macro features
+  (GDP, unemployment) would need retraining on contemporary data before any
+  real deployment.
+- The PyTorch `Dataset`/`DataLoader` scaffolding and AMP autocast were used
+  for GPU plumbing around LightGBM; no neural network was actually trained —
+  the final model is gradient boosting throughout.

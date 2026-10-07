@@ -1,14 +1,141 @@
 ---
-title: "Topological Data Analysis for Psychometrics"
-subtitle: "tda-psych: persistent homology as a lens on item-response data"
-description: "Applying persistent homology and mapper algorithms to psychometric response data, with a full mathematical test suite, CI and coverage tracking."
+title: "tda-psych"
+subtitle: "Topological Data Analysis for Psychometrics — persistent homology on item-response data, validated against known topology"
+description: "A Python library applying persistent homology, mapper graphs and network analysis to psychometric data, with a mathematical test suite that checks persistence computations against manifolds of known Betti numbers, and three reproducible case studies on simulated instruments with ground truth."
 category: "psychometrics"
-tags: ["tda", "persistent-homology", "psychometrics", "topology", "pytest"]
+tags: ["tda", "persistent-homology", "mapper", "psychometrics", "irt", "topological-data-analysis", "pytest"]
 repo: "https://github.com/lucy-arias/tda-psych"
 pubDate: 2026-03-07
 featured: false
 status: "draft"
+metrics:
+  - label: "Test functions"
+    value: "846"
+    note: "across 53 test files, unit → e2e"
+  - label: "Ground-truth manifolds"
+    value: "S¹, S², T²"
+    note: "persistence checked vs known Betti numbers"
+  - label: "Library modules"
+    value: "15"
+  - label: "Case 2 stability"
+    value: "200/200"
+    note: "bootstrap replicates with identical β₀"
+stack: ["Python 3.10+", "NumPy", "SciPy", "pandas", "scikit-learn", "GUDHI", "Ripser", "pytest", "Docker"]
 ---
 
-*Full case study in preparation. The repository is public with CI and a
-complete mathematical test suite.*
+## Problem
+
+Psychometrics reasons about latent structure — dimensions, clusters, learning
+trajectories — but its standard tools (factor analysis, IRT, EGA) each see a
+narrow slice of that structure. Topological Data Analysis offers complements:
+persistent homology tracks how connected components, cycles and voids appear
+and disappear as a scale parameter grows, without committing to a parametric
+latent model up front. The practical problem is that TDA machinery (Vietoris–Rips
+complexes, persistence diagrams, mapper graphs) is general-purpose, and nothing
+existed that wrapped it for assessment data with the validation discipline
+psychometric claims require. This library is my attempt to build that: a
+pip-installable package where every topological computation is tested against
+objects whose topology is known exactly, before it is ever pointed at a
+response matrix.
+
+## Method
+
+`tda-psych` (v1.0.0, MIT, Python 3.10+) is organized as 15 modules
+(~28.6k LOC) around a single pipeline: item or person-level response data →
+distance matrices (correlation, cosine, Euclidean, Canberra, Bray–Curtis) →
+Vietoris–Rips complexes via GUDHI/Ripser → persistence diagrams, Betti curves,
+persistence landscapes and images → statistics (bootstrap confidence intervals,
+sensitivity analysis, effect sizes, power analysis) → mapper graphs with
+community detection for person-centered profiling.
+
+Three design decisions define the project:
+
+- **Validation against ground truth is a first-class test layer, not an
+  afterthought.** `tests/validation/` reconstructs manifolds with known Betti
+  numbers — circle S¹ (β₀=1, β₁=1), sphere S² (1, 0, 1), torus T² (1, 2, 1) —
+  and asserts the computed persistence recovers them, including noisy
+  variants.
+- **Psychometric methods are checked where they make checkable claims.** EGA
+  dimension recovery is tested on simulated 2-factor and 3-factor IRT data
+  (500 persons each); the test passes if the recovered dimensionality is
+  within ±1 of the generative truth.
+- **Every published case study is a reproducible script** (`scripts/chapter4/`,
+  runnable via `make validate-cases`) over synthetic data with known
+  generative structure, with results, figures and seed metadata committed to
+  `results/`.
+
+## Evidence
+
+The test suite contains 846 test functions across 53 files, layered unit →
+integration → mathematical property tests → validation → end-to-end. The
+claims I can verify from committed artifacts:
+
+- **Ground-truth topology recovery.** Persistence on sampled S¹, S², T² and
+  two-circle configurations matches the theoretical Betti numbers (these
+  tests skip cleanly when GUDHI is unavailable rather than passing vacuously).
+- **EGA dimension recovery** on simulated 2- and 3-factor data within ±1
+  dimension of truth.
+- **Case 1 — topological validation of a mathematics instrument** (simulated
+  MIRT-2PL, 200 students × 20 items, 3 intended dimensions). At
+  ε = 1.05 the complex yields H₀ = 192 vs a target of 197 (within the ±10
+  tolerance the validation encodes), H₁ = 3 and H₂ = 0 matching targets
+  exactly; the script's quality score is 0.975. Results were replicated
+  across seeds 42, 123 and 456, all committed.
+- **Case 2 — Capacity for Pedagogical Agency scale** (simulated, 745
+  teachers × 32 items). The result I report is the negative one: across an
+  ε grid from 0.05 to 1.00 the item-level complex stays at H₀ = 32, H₁ = 0,
+  H₂ = 0 — items never merge into the globally connected construct the target
+  (H₀ = 1, H₁ = 4) hypothesizes. A 200-replicate bootstrap at ε = 0.52
+  reproduces β₀ = 32 in 200/200 replicates (H₁ = 0 in 196/200). The expected
+  topology was not recovered within the explored grid, and the repository
+  says so rather than tuning until it disappears.
+- **Case 3 — longitudinal knowledge evolution** (simulated, 300 students ×
+  15 items × 4 timepoints, growth-with-reorganization model).
+
+## Results
+
+- A working, documented library with Sphinx API reference, Docker builds,
+  CI, and seed-controlled, end-to-end reproducible pipelines.
+- A compiled literature review and a research monograph (Arias, 2026) that
+  situate the software in the methodological landscape and document where TDA
+  adds information beyond standard psychometrics.
+- Case 1 demonstrates the intended use case: a student-level complex whose
+  3 persistent cycles line up with the three generative dimensions, stable
+  across seeds.
+- Case 2 is the more scientifically interesting output: an honest
+  non-recovery, with bootstrap evidence that the null topology is stable
+  rather than an artifact of one ε choice.
+
+## Honest caveats
+
+Credibility matters more than polish here, so the limits are stated plainly:
+
+- **All three case studies run on synthetic data with known ground truth.**
+  No real assessment dataset is analyzed in the repository. The studies
+  validate that the pipeline recovers structure that was put there — a
+  necessary condition for trusting it on field data, not yet evidence of
+  value on field data.
+- **The quality scores are hand-constructed.** The "A+" grades come from a
+  bespoke weighted distance to pre-set Betti targets (e.g., H₀ ≈ 197 "≈ one
+  component per student"), not from a calibrated or published statistic.
+- **Case 1's preprocessing underperforms its own documentation.** The script
+  docstring states PCA-5D captures >95% of variance; the committed results
+  show 53.5% cumulative variance across the five retained components. I did
+  not edit either side to make them agree — the discrepancy is itself a
+  caveat about dimension-reduction choices before TDA.
+- **Case 3's perfect score is self-referential.** The stored "expected"
+  β₀ pattern equals the observed pattern (correlation 1.0, RMSE 0), so the
+  reported quality of 1.0 is a consistency check, not independent
+  validation; the docstring's stated targets ([81, 94, 93, 92]) do not match
+  the stored ones ([91, 82, 90, 92]). Treat Case 3 as a pipeline smoke test.
+- **Coverage is not quoted here on purpose.** The root `coverage.xml` shows a
+  12% line rate that is clearly a stale partial artifact; I could not verify
+  a current figure from the repository alone, so it is omitted rather than
+  guessed.
+- **GUDHI-dependent correctness tests skip** when the C++ backend is missing;
+  on a machine without GUDHI the strongest layer of evidence silently does
+  not run.
+
+What remains unvalidated, in one line: whether topological summaries of real
+response data carry incremental validity over factor analysis and EGA. That
+is the question this software infrastructure was built to answer next.
