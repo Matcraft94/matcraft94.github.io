@@ -4,6 +4,7 @@ subtitle: "Early-warning detection of student dropout with LightGBM"
 description: "A binary early-warning classifier for student dropout on the UCI 'Predict students' dropout and academic success' dataset: 13 engineered academic and socioeconomic features, random-search hyperparameter optimization under 5-fold CV, and an ensemble of fold models reaching 0.88 accuracy on 885 held-out students — with an honest look at the 0.79 dropout-recall caveat and at the label-encoder leakage in the original notebook."
 category: "ml-engineering"
 tags: ["lightgbm", "education", "classification", "feature-engineering", "gpu"]
+repo: "https://github.com/Matcraft94/ds-projects/tree/develop/academic-performance-prediction"
 pubDate: 2024-05-12
 featured: false
 status: "published"

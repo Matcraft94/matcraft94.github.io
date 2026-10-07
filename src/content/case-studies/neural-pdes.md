@@ -4,6 +4,7 @@ subtitle: "Physics-informed networks and neural ODEs for forward and inverse dif
 description: "A notebook-based research sandbox covering PINNs with domain decomposition and energy penalties for the double pendulum, NLLSQ/VarPro inverse parameter estimation for a Poisson problem, a neural surrogate for Oregonator reaction kinetics, and SIR parameter inference with Pyro SVI — with all reported numbers taken from actual training logs."
 category: "scientific-ml"
 tags: ["pinns", "neural-odes", "pdes", "pytorch", "inverse-problems", "scientific-machine-learning"]
+repo: "https://github.com/Matcraft94/ds-projects/tree/develop/neural-pdes-solver"
 pubDate: 2025-06-15
 featured: false
 status: "published"
