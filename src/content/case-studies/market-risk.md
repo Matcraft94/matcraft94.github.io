@@ -4,6 +4,7 @@ subtitle: "Auditing and repairing an LSTM risk pipeline — seven methodological
 description: "End-to-end LSTM pipeline for short-horizon market risk prediction on 1-minute bars. While preparing this portfolio the code was audited twice: first six defects (normalization leakage, wrong target column, no-op gradient clip, a backtest that never used the trained model, ~2000x Sharpe annualization) and then a seventh found by independent review — an RSI NaN bug whose dropna silently deleted 21% of bars and biased every result. All seven are fixed; the corrected pipeline shows the model has no edge: the backtest is buy-and-hold of a flat market."
 category: "quantitative-finance"
 tags: ["lstm", "time-series", "walk-forward-validation", "risk-management", "backtesting", "pytorch", "code-audit"]
+repo: "https://github.com/Matcraft94/ds-projects/tree/develop/market-risk-analysis"
 pubDate: 2024-08-10
 featured: false
 status: "published"

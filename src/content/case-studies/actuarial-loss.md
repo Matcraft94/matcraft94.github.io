@@ -4,6 +4,7 @@ subtitle: "XGBoost + NLP feature engineering for workers' compensation claim cos
 description: "An end-to-end R/tidymodels pipeline that predicts ultimate incurred claim cost from tabular, temporal, and free-text claim data, with hyperparameter tuning via Latin hypercube search and error analysis by value segment."
 category: "ml-engineering"
 tags: ["xgboost", "tidymodels", "r", "feature-engineering", "nlp", "regression", "actuarial"]
+repo: "https://github.com/Matcraft94/ds-projects/tree/develop/actuarial-loss-prediction"
 pubDate: 2024-11-20
 featured: false
 status: "published"
