@@ -20,5 +20,10 @@ assumptions quietly fail.
 discontinuous nonlinearities*, Electron. J. Diff. Eq., Vol. 2024 (2024), No. 15, pp. 1–16.
 
 **Numerical companion:** FEniCS experiments behind the paper live in
-[`pdes-simulations`](https://github.com/Matcraft94/ds-projects/tree/develop/pdes-simulations)
-(code-only notebook, no narrative claims).
+[`pdes-simulations`](https://github.com/Matcraft94/ds-projects/tree/develop/pdes-simulations).
+The notebook solves the problem with a mixed Ciarlet–Raviart formulation
+(verified against a manufactured solution: L2 error 2.5e-4 at n=64,
+observed order ≈1.3), reproduces the paper's literal parameter case —
+which converges to the trivial solution u≡0, exactly as the spectral
+condition predicts — and exhibits a non-trivial free-boundary solution
+for supercritical q. Executed in the official `dolfinx/lab` container.
