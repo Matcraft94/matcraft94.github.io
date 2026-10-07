@@ -115,6 +115,12 @@
   }
 
   function init() {
+    if (typeof Chart === 'undefined') {
+      document.querySelectorAll('.chart-block').forEach((b) => {
+        b.textContent = 'Interactive chart requires JavaScript (Chart.js failed to load).';
+      });
+      return;
+    }
     document.querySelectorAll('.chart-block').forEach(render);
   }
 
