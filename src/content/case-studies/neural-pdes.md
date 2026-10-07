@@ -72,8 +72,10 @@ Five independent notebooks, each self-contained PyTorch/Pyro code:
   Belousov–Zhabotinsky reaction (Oregonator ODE system) is integrated with a
   hand-written RK4 to generate synthetic concentrations, and a network is
   trained to predict species concentrations from (t, u) pairs — a
-  regression surrogate, not a full reaction–diffusion–advection solve (the
-  notebook states the RDA simplification explicitly).
+  regression surrogate, not a full reaction–diffusion–advection solve.
+  (The notebook's own text describes an RDA PDE, but the code integrates a
+  temporal ODE: the diffusion/advection coefficients are defined and never
+  used — the simplification is real, just not stated by the notebook.)
 - **Neural ODEs from first principles.** An educational notebook (in
   Spanish) building Euler/RK4 integrators, phase portraits, then NODEs with
   the adjoint method (torchdiffeq/TorchDyn), reproduced on three toy 2D
@@ -86,15 +88,23 @@ All numbers below are read from the executed notebook outputs, not restated
 from memory:
 
 - **Inverse Poisson (120 collocation points, 1000 epochs each).** NLLSQ
-  converged to **α ≈ 0.9645 — a 3.71% parameter error** — with solution MSE
-  0.056 and R² 0.436. VarPro converged to **α ≈ −0.786, a 178.7% parameter
-  error**: it solved the regression for the solution field but failed to
-  recover the physical coefficient. Both runs took ~47 s and under 0.3 MB
-  peak memory.
+  reached **α = 0.9645 at epoch 900 — a 3.71% parameter error** — still
+  descending (≈ 0.963 by the final step), so "converged" is generous: there
+  is no stopping criterion, and solution quality is modest (MSE 0.056,
+  R² 0.436). VarPro diverged to **α ≈ −0.786, a 178.7% parameter error** —
+  with the caveat that this implementation is a degenerate variant (the
+  closed-form update ignores the measurement data and α is never a trainable
+  parameter), so it is not a fair verdict on the VarPro method itself. Both
+  runs took ~47 s and under 0.3 MB peak memory.
 - **Double pendulum PINN.** Recorded training loss went from 19.50 at epoch
-  0 to 0.024 at epoch 100 (of 200), trained on GPU. The comparison plots
-  show the PINN solution against the `solve_ivp` reference for θ₁, θ₂, ω₁,
-  ω₂.
+  0 to 0.024 at epoch 100 (of 200; the final loss is not printed), trained
+  on GPU. The comparison against the `solve_ivp` reference is **visual
+  only** — the notebook contains no numerical error metric, only overlay
+  plots for θ₁, θ₂, ω₁, ω₂. Two data-handling bugs (2026-10-07 audit) limit
+  what the loss certifies: the initial-condition loss is evaluated at a
+  random `t[0]` because the DataLoader shuffles batches, and the
+  energy-variation penalty differences unordered points, so neither term
+  measures what it claims.
 - **Neural ODE classification benchmarks.** Re-run 2026-10-07 on an
   RTX 5070 Ti (seed 42); the notebook now persists metrics through an
   added `FINAL_METRICS` print, since its progress bars alone store no
@@ -108,10 +118,13 @@ from memory:
   dimension (100 epochs): test accuracy **1.0**, test loss **5.69e-6**.
 - **Oregonator surrogate.** Training loss plateaued at ≈ 0.078 after ~100
   epochs (1000 epochs run); test loss 0.346 on the held-out tail of the
-  trajectory. Caveat: this MSE is computed on a `[80,1]` vs `[80]` broadcast
-  (PyTorch warns explicitly in the notebook), so the reported figures average
-  an 80×80 broadcast matrix rather than the true per-point MSE — direction
-  (plateau, generalization gap) is meaningful, the absolute values less so.
+  trajectory. Caveat: the MSE is computed on an `[N,1]` vs `[N]` broadcast in
+  **both** the train and test cells (PyTorch warns explicitly in the
+  notebook), so each figure averages an N×N broadcast matrix rather than the
+  true per-point MSE — mathematically a pessimistic upper bound
+  (`MSE_broadcast = MSE_real + 2·Cov`), so direction (plateau,
+  generalization gap) is meaningful, the absolute values less so. No seed or
+  weights are saved, so the numbers are not reproducible as-is.
 
 <div class="chart-block"><script type="application/json" class="chart-data">
 {"type":"bar","title":"Oregonator surrogate — train plateau vs held-out test loss (generalization gap; broadcast-MSE caveat applies)","xLabel":"evaluation set","yLabel":"MSE loss (broadcast caveat)","labels":["train (plateau, ~epoch 100)","test (held-out tail)"],"datasets":[{"label":"MSE","data":[0.078,0.346]}],"values":true,"source":"neural-pdes-solver/RDA-DN-NA.ipynb cells 23-24"}
