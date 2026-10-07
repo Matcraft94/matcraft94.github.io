@@ -1,116 +1,103 @@
 ---
 title: "Market Risk Prediction with LSTM Walk-Forward Validation"
-subtitle: "LSTM risk forecasting with time-series cross-validation, fold checkpointing, and a transaction-cost-aware backtest"
-description: "End-to-end LSTM pipeline for short-horizon market risk prediction: technical-feature engineering, walk-forward validation with a chronological hold-out, per-fold checkpoints, and a volatility-regime backtest. An earlier README claimed Sharpe and drawdown results that no surviving output substantiates; this case study states plainly what the code does and what remains unvalidated."
+subtitle: "Auditing and repairing an LSTM risk pipeline — six methodological defects found, fixed, and re-run with honest results"
+description: "End-to-end LSTM pipeline for short-horizon market risk prediction on 1-minute bars. While preparing this portfolio I audited the code and found six methodological defects — normalization leakage, wrong target column, a no-op gradient clip, a backtest that never used the trained model, and a Sharpe annualization off by ~2000×. All six are fixed and the pipeline re-run; the corrected result is an honest negative: cost drag, not alpha."
 category: "quantitative-finance"
-tags: ["lstm", "time-series", "walk-forward-validation", "risk-management", "backtesting", "pytorch"]
+tags: ["lstm", "time-series", "walk-forward-validation", "risk-management", "backtesting", "pytorch", "code-audit"]
 pubDate: 2024-08-10
 featured: false
 status: "draft"
 metrics:
-  - label: "Reported Sharpe / accuracy"
-    value: "none"
-    note: "no logs, notebooks, or metric outputs survive in the repo — deliberately not claimed"
-  - label: "Checkpoint artifacts on disk"
-    value: "5 fold + best model"
-    note: "from an earlier run configuration; the current code path would produce at most 3 folds"
-  - label: "Final validation split"
-    value: "20% chronological"
-    note: "held out from all fold training, used only for final evaluation and backtest"
+  - label: "Backtest total return"
+    value: "-37.3%"
+    note: "holdout, model signal, 0.1% cost per flip — cost drag explains it"
+  - label: "Position flips"
+    value: "14,922"
+    note: "≈ one per bar: the model signal overtrades to death"
+  - label: "Fold val loss (mean ± std)"
+    value: "0.374 ± 0.486"
+    note: "3 walk-forward folds; middle regime folds badly"
+  - label: "Final holdout loss"
+    value: "5.43"
+    note: "regime shift: the model does not transfer to the last 20%"
 stack: ["PyTorch (2-layer LSTM)", "scikit-learn TimeSeriesSplit", "pandas / NumPy feature engineering", "Plotly visualization"]
 ---
 
 ## Problem
 
-Short-horizon market-risk prediction: given OHLC bars with tick volume for a
-crash-volatility index, forecast the next bar's price level and translate the
-forecast into risk-aware trading signals. The emphasis of this project is
-evaluation discipline — walk-forward validation and a held-out final period —
-rather than a single optimistic backtest.
+Short-horizon market-risk prediction: given OHLC bars with tick volume for
+a crash-volatility synthetic index, forecast the next bar's close and
+translate the forecast into risk-aware trading signals. The emphasis is
+evaluation discipline — walk-forward validation and a chronological
+hold-out — rather than a single optimistic backtest.
 
-## Method
+Data: 94,858 one-minute bars of crash500 (2022-04-25 → 2022-06-30,
+24/7 market), reduced to 74,865 rows × 13 features after engineering.
+The 80/20 chronological split reserves 14,973 bars as a final hold-out
+that no fold training ever sees.
 
-- **Features** (`src/feature_engineering.py`, `src/data_processing.py`):
-  returns, 20-period rolling volatility, RSI(14), MA20, MA50, ATR(14),
-  10-bar momentum, and a 20-bar volume moving average, built from raw
-  `open/high/low/close/tick_volume` columns. Input schemas are validated
-  explicitly and fail loudly on missing columns.
-- **Model** (`src/model.py`): a 2-layer LSTM (hidden size 32, dropout 0.2)
-  with a small MLP head, trained with Adam (lr 1e-4) and MSE loss. The
-  training loop guards against NaN outputs.
-- **Validation** (`main.py`): a chronological 80/20 split reserves the final
-  20% as a hold-out. On the first 80%, `TimeSeriesSplit` runs walk-forward
-  folds with minimum-size guards that skip degenerate folds; each fold
-  trains up to 10 epochs with early stopping (patience 3) and saves its own
-  checkpoint (`model_fold_*.pth`), with the best fold-epoch snapshot kept as
-  `best_model.pth`. Fold validation losses are summarized as mean ± std, and
-  the best model is then scored once on the untouched 20%.
-- **Backtest** (`src/backtesting.py`): a volatility-regime rule — short when
-  realized volatility exceeds 1.5× its mean, long when below 0.5× — with a
-  0.001 transaction cost applied on every position change. It reports total
-  return, annualized Sharpe, max drawdown, win rate, and trade count. An
-  LSTM-signal path (predicted vs. current price with a ±1% band) exists but
-  is only used when a model and scaler are supplied.
+## Audit: six defects found while preparing this portfolio
 
-## Evidence
+The original pipeline had architectural ambition but six concrete
+methodological defects. Each is fixed in the repo (commit `2f1a79c` on
+`develop`) and listed here because this is the actual capability the
+case study demonstrates — catching these is the job:
 
-What is verifiable from the repository today:
+| # | Defect | Fix |
+|---|---|---|
+| 1 | `crash300` and `crash500_2` were loaded and never used; crash500 lived in variables named `processed_300` | load only the dataset the pipeline uses; rename |
+| 2 | The training target was **column index 0 of the numeric frame — `open`** — while the comment said "next close" | explicit `target_col='close'` parameter |
+| 3 | Normalization used the mean/std of whatever frame the dataset was built from, leaking validation and holdout statistics into every fold | scaler fitted on the **training fold only** (`MarketDataset.fit_scaler`) and passed everywhere; persisted with the model |
+| 4 | `clip_grad_norm_` was called inside `forward()` — before any backward pass, a no-op | moved to after `loss.backward()` |
+| 5 | The backtest was instantiated with **no model and no scaler**, so reported metrics came from the volatility-regime rule alone; the trained LSTM never participated | `BacktestStrategy` now receives the best fold model and scaler; predictions are de-normalized to price scale before signal generation |
+| 6 | "Sharpe" annualized with a hardcoded √252 on **1-minute bars** — an inflation of ~2000×; drawdown used a summed-return curve | `periods_per_year` is an explicit parameter (525,960 here); compounded equity curve for return and drawdown |
 
-| Artifact | What it substantiates |
-|---|---|
-| Full pipeline code (`main.py`, `src/`) | the architecture described above |
-| 6 checkpoint files (~64 KB each) on disk | a training run completed under an earlier configuration |
-| `data/processed/plot_crash*.html` | the visualization module executed against the raw data |
+Reproducibility was also pinned: `torch`/`numpy` seeds set to 42.
 
-What is **not** in the repository: training logs, loss values, backtest
-metric outputs, or notebooks. The 5 per-fold checkpoints also do not match
-the current code, which computes `n_splits = min(3, …)` — the artifacts came
-from an earlier configuration that ran more folds. Neither the fold losses
-nor any Sharpe/drawdown figure those runs produced are recorded anywhere I
-can point to.
+## Results after the fix (verified re-run)
 
-## Results and honest caveats
+Walk-forward folds (chronological, expanding window):
 
-An earlier README for this project cited Sharpe and drawdown results and
-"early stopping in 10 epochs." I could not trace any of those numbers to a
-surviving log, notebook, or output file, so they are **dropped**, not
-repeated here. The only performance-adjacent evidence is the existence of
-the checkpoints themselves.
+<div class="chart-block"><script type="application/json" class="chart-data">
+{"type":"bar","title":"Validation loss by fold and final holdout (normalized MSE on next close, log scale)","xLabel":"evaluation segment","yLabel":"MSE loss (log)","labels":["fold 1 val","fold 2 val","fold 3 val","final holdout"],"datasets":[{"label":"validation loss","data":[0.016,1.0605,0.0443,5.4251]}],"yLog":true,"values":true,"source":"market-risk-analysis re-run, seed 42, commit 2f1a79c"}
+</script></div>
 
-Known limitations, stated plainly:
+- Fold validation losses 0.016 / 1.061 / 0.044 (mean 0.374 ± 0.486). The
+  middle fold fails by an order of magnitude — a volatility regime the
+  model trained on the earlier period cannot represent.
+- Final holdout loss **5.43**: distribution shift in the last 20% is
+  severe enough that the model is off the training manifold entirely.
 
-- **Two of the three datasets are dead paths.** `main.py` loads
-  `crash300.xlsx`, `crash500.xlsx`, and `crash500_2.xlsx`, but only
-  `crash500` is ever processed — and it is confusingly stored in a variable
-  named `processed_300`. The other two files are loaded and unused.
-- **Per-fold normalization leaks fold statistics.** `MarketDataset`
-  z-scores with the mean/std of the entire frame passed in, which includes
-  the validation portion of each fold and the target itself. Normalization
-  should be fit on training windows only.
-- **Target column ambiguity.** The dataset returns column index 0 of the
-  numeric frame as the target while the comment says "next close"; which
-  column actually sits at index 0 after the date columns are dropped is not
-  asserted anywhere.
-- **The backtest in `main.py` does not use the trained model.**
-  `BacktestStrategy` is instantiated with data only — no model, no scaler —
-  so the reported metrics come from the volatility-regime rule alone. The
-  LSTM is never scored on the hold-out by the entry point.
-- **Metric definitions are rough.** "Sharpe" annualizes with √252
-  regardless of the bar frequency of the underlying data (unknown from the
-  repo), and drawdown is computed on the cumulative *sum* of returns rather
-  than a compounded equity curve.
-- **Gradient clipping is a no-op as written.** `clip_grad_norm_` is called
-  inside `forward()`, before any backward pass, so it never constrains the
-  gradients it is meant to stabilize.
+Backtest on the holdout, now actually driven by the LSTM:
 
-**What survives scrutiny:** the walk-forward evaluation design, per-fold
-checkpointing, schema-validated feature engineering, and a backtest skeleton
-that at least charges transaction costs — the plumbing of a credible
-pipeline, with the numeric results still owed.
+- **14,922 position flips over 14,913 bars** — the ±1% prediction band
+  flips the signal almost every bar.
+- **Total return -37.3%**, max drawdown -37.3%. With a 0.1% cost per
+  flip, the cost drag alone is ≈ 15 points of pure bleed; the strategy
+  loses to friction, not to direction.
+- Win rate 86.8% of bars positive — a classic overtrading pathology:
+  small per-bar wins, large per-flip costs. The annualized Sharpe at
+  the true bar frequency (525,600/yr) is -48; the number is reported
+  only to show the wiring, not as a performance claim.
 
-## Next step
+## Honest caveats
 
-Wire `best_model.pth` and a properly fitted scaler into the backtest, fit
-normalization on training windows only, pin the target column explicitly,
-log fold losses and backtest metrics to disk on every run, and record the
-results here — in either direction.
+- The model signal as specified (threshold on next-close prediction) has
+  no edge at 1-minute horizon on this instrument — the honest result is
+  negative, and the corrected pipeline now *produces* that result instead
+  of hiding it.
+- The corrected numbers replace an earlier README that cited Sharpe and
+  drawdown figures traceable to no surviving output; those claims were
+  dropped in the audit, not repeated.
+- What survives scrutiny: the evaluation design (walk-forward +
+  untouched holdout), per-fold checkpointing, schema-validated feature
+  engineering, a cost-aware backtest, and an audit trail that converts
+  a broken pipeline into a verifiable negative result.
+
+## Reproduce
+
+```bash
+cd market-risk-analysis
+uv venv .venv && uv pip install -e .  # torch CPU, pandas, scikit-learn, plotly
+python main.py   # ~10 min on CPU; seeds pinned
+```

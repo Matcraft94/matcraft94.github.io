@@ -13,7 +13,8 @@ metrics:
     value: "1.4e-13"
     note: "20 distribution×replica comparisons"
   - label: "Test suite"
-    value: "3,200+"
+    value: "3,379"
+    note: "tests collected, per repo README"
   - label: "GPU speedup"
     value: "141×"
     note: "PyTorch CUDA vs CPU"
@@ -78,6 +79,29 @@ IRLS iterations carry enough work. At the largest size, a 4.3-second
 Poisson fit drops to 0.030 s — that ~2-decade gap in the runtime chart is
 the 141×. At small n, plain NumPy wins, and the honest trade-off section
 of the performance guide says so.
-- Used as the reference implementation in my own applied work, where the
-  GAMM random-effects machinery handles repeated-measures designs that
-  standard gradient boosting cannot model natively.
+
+## Ecosystem position
+
+Where Aurora-GLM sits against the tools it draws inspiration from —
+R's **mgcv** and **lme4**, and Python's **statsmodels**:
+
+| Capability | statsmodels | R mgcv | R lme4/nlme | Aurora-GLM |
+|---|---|---|---|---|
+| GLM (9 families, links) | ✓ | via `glm()` | via `glm()` | ✓ |
+| GAM (penalized splines) | ✗ | ✓ | ✗ | ✓ |
+| GAMM (random effects) | ✗ | ✓ (`gamm`) | ✓ | ✓ |
+| R-style formulas | partial (patsy) | ✓ | ✓ | ✓ |
+| NumPy / PyTorch / JAX backends | ✗ | ✗ | ✗ | ✓ |
+| GPU acceleration | ✗ | ✗ | ✗ | ✓ (up to 141×) |
+| Usable from a Python production stack | ✓ | ✗ (R) | ✗ (R) | ✓ |
+
+The honest gap, stated in the repo's own known-limitations section:
+systematic test-backed accuracy comparisons against `mgcv`/`lme4` are
+**planned, not yet implemented** — automated R validation currently
+covers GLM (`glm()`, < 1e-6 coefficient agreement in CI). The GAM/GAMM
+rows of this table are capability claims, not accuracy claims.
+
+Aurora-GLM is the right tool when a Python service needs GAM/GAMM
+machinery with GPU acceleration; statsmodels remains the right tool for
+pure-CPU GLMs with deep diagnostics, and R remains the statistical
+reference.
