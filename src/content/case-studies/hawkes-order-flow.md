@@ -56,6 +56,14 @@ Layered on top:
 Benchmarks on a 4-core machine; full numbers in the repo's performance guide
 (`docs/PERFORMANCE_GUIDE.md`).
 
+<div class="chart-block"><script type="application/json" class="chart-data">
+{"type":"bar","title":"Signal sensitivity — Sharpe vs entry threshold","xLabel":"imbalance entry threshold","yLabel":"Sharpe ratio","labels":["0.5","1.0","1.5","2.0","2.5","3.0"],"datasets":[{"label":"Sharpe","data":[-0.4137,-0.188,0.0144,-0.0503,0,0]}],"hline":0,"source":"hawkes-order-flow/notebooks/03_backtesting.ipynb"}
+</script></div>
+
+The sensitivity scan shows the honest shape of this result: performance
+improves toward a threshold of 1.5 and then collapses — there is no region
+with enough trades and enough edge to survive costs.
+
 ## Results and honest caveats
 
 Two strategy families were backtested — intensity-imbalance and
@@ -64,6 +72,11 @@ prediction-based signals. The headline results:
 - **Walk-forward out-of-sample (notebook 03): mean Sharpe -0.35** across
   windows, 16.7% of windows positive. The strategies are not profitable
   out-of-sample on the synthetic generator.
+
+<div class="chart-block"><script type="application/json" class="chart-data">
+{"type":"bar","title":"Walk-forward out-of-sample Sharpe by window","xLabel":"walk-forward window","yLabel":"Sharpe ratio","labels":["1","2","3","4","5","6"],"datasets":[{"label":"Sharpe","data":[0.4577,-0.6702,-0.6731,-0.8099,-0.1171,-0.3026]}],"hline":0,"source":"hawkes-order-flow/notebooks/03_backtesting.ipynb (6 windows, seed 42)"}
+</script></div>
+
 - An earlier version of this project reported "Sharpe 86.98, win rate
   62.5%, grade A+". While auditing the project for this portfolio, I traced
   those numbers to two compounding artifacts, since corrected in the repo:

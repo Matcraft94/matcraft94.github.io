@@ -49,6 +49,11 @@ not assumed.
 - **Automated differential testing against R and statsmodels** — 20
   family × replica comparisons on every run; maximum observed deviation
   **1.4 × 10⁻¹³** (pure floating-point noise).
+
+<div class="chart-block"><script type="application/json" class="chart-data">
+{"type":"bar","title":"Coefficient agreement vs reference implementations (max deviation, log scale)","xLabel":"distribution family","yLabel":"max |Δ coefficient| (log)","labels":["Gaussian","Poisson","Binomial","Gamma"],"datasets":[{"label":"vs statsmodels","data":[1e-11,1e-10,1e-9,2e-6]}],"yLog":true,"source":"Aurora-GLM/benchmarks/PERFORMANCE.md"}
+</script></div>
+
 - **3,200+ test suite**, with `mypy` and `ruff` clean in CI.
 - Every release validates against the reference implementations again; a
   regression that changes coefficients beyond tolerance blocks the build.
@@ -58,6 +63,15 @@ not assumed.
 - Published on **PyPI** (v1.0.0), MIT license.
 - Up to **141× GPU acceleration** via the PyTorch CUDA backend on
   large-scale fits.
+
+<div class="chart-block"><script type="application/json" class="chart-data">
+{"type":"bar","title":"PyTorch CUDA speedup over NumPy by problem size (log scale)","xLabel":"problem size n","yLabel":"speedup × (log)","labels":["n=1,000","n=5,000","n=50,000"],"datasets":[{"label":"Gaussian","data":[9.2,39.4,116]},{"label":"Poisson","data":[6.8,27.9,141]}],"yLog":true,"source":"Aurora-GLM/benchmarks/PERFORMANCE.md"}
+</script></div>
+
+The GPU advantage is not a constant factor — it grows with problem size,
+because the CUDA backend amortizes kernel-launch overhead only once the
+IRLS iterations carry enough work. At small n, plain NumPy wins, and the
+honest trade-off section of the performance guide says so.
 - Used as the reference implementation in my own applied work, where the
   GAMM random-effects machinery handles repeated-measures designs that
   standard gradient boosting cannot model natively.
