@@ -23,6 +23,31 @@
   const ACCENT = '#5eead4';
   const ACCENT2 = '#7dd3fc';
 
+  /* Optional per-bar/per-point value labels (opt in with "values": true).
+   * Needed because log-scale bar charts hide the magnitude of large values. */
+  const valueLabels = {
+    id: 'valueLabels',
+    afterDatasetsDraw(chart) {
+      const { ctx } = chart;
+      ctx.save();
+      ctx.font = '10px ui-monospace, monospace';
+      ctx.fillStyle = MUTED;
+      ctx.textAlign = 'center';
+      chart.data.datasets.forEach((ds, i) => {
+        if (ds.label === 'zero') return;
+        const meta = chart.getDatasetMeta(i);
+        meta.data.forEach((el, j) => {
+          const v = ds.data[j];
+          if (typeof v !== 'number' || !isFinite(v)) return;
+          const label = v >= 100 ? String(Math.round(v)) : String(+v.toPrecision(2));
+          const y = Math.max(el.y - 4, 10);
+          ctx.fillText(label, el.x, y);
+        });
+      });
+      ctx.restore();
+    },
+  };
+
   function baseOptions(cfg) {
     return {
       responsive: true,
@@ -104,7 +129,12 @@
       });
     }
 
-    new Chart(canvas, { type: cfg.type || 'bar', data: { labels: cfg.labels, datasets }, options });
+    new Chart(canvas, {
+      type: cfg.type || 'bar',
+      data: { labels: cfg.labels, datasets },
+      options,
+      plugins: cfg.values ? [valueLabels] : [],
+    });
 
     if (cfg.source) {
       const src = document.createElement('div');
