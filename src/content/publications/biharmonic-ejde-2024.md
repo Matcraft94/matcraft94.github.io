@@ -18,3 +18,7 @@ assumptions quietly fail.
 
 **Citation:** E. Arias, M. Calahorrano, A. Castro, *A biharmonic equation with
 discontinuous nonlinearities*, Electron. J. Diff. Eq., Vol. 2024 (2024), No. 15, pp. 1–16.
+
+**Numerical companion:** FEniCS experiments behind the paper live in
+[`pdes-simulations`](https://github.com/Matcraft94/ds-projects/tree/develop/pdes-simulations)
+(code-only notebook, no narrative claims).
