@@ -87,24 +87,32 @@ Five independent notebooks, each self-contained PyTorch/Pyro code:
 All numbers below are read from the executed notebook outputs, not restated
 from memory:
 
-- **Inverse Poisson (120 collocation points, 1000 epochs each).** NLLSQ
-  reached **α = 0.9645 at epoch 900 — a 3.71% parameter error** — still
-  descending (≈ 0.963 by the final step), so "converged" is generous: there
-  is no stopping criterion, and solution quality is modest (MSE 0.056,
-  R² 0.436). VarPro diverged to **α ≈ −0.786, a 178.7% parameter error** —
-  with the caveat that this implementation is a degenerate variant (the
-  closed-form update ignores the measurement data and α is never a trainable
-  parameter), so it is not a fair verdict on the VarPro method itself. Both
-  runs took ~47 s and under 0.3 MB peak memory.
-- **Double pendulum PINN.** Recorded training loss went from 19.50 at epoch
-  0 to 0.024 at epoch 100 (of 200; the final loss is not printed), trained
-  on GPU. The comparison against the `solve_ivp` reference is **visual
-  only** — the notebook contains no numerical error metric, only overlay
-  plots for θ₁, θ₂, ω₁, ω₂. Two data-handling bugs (2026-10-07 audit) limit
-  what the loss certifies: the initial-condition loss is evaluated at a
-  random `t[0]` because the DataLoader shuffles batches, and the
-  energy-variation penalty differences unordered points, so neither term
-  measures what it claims.
+- **Inverse Poisson (120 collocation points, re-run 2026-10-07 with a correct
+  VarPro).** The re-implementation exposed that **the benchmark itself is
+  α-unidentifiable**: the manufactured source f(α) shares its α with the
+  coefficient, so the PDE residual vanishes for *every* α at the true
+  solution. Two consequences, both machine-verified. VarPro (proper
+  Golub–Pereyra: exact elimination of the linear head + exact 1-D α step)
+  recovers the **solution** to machine precision — R² 1.0, MSE 3.2e-13,
+  9.4 s (10× faster than NLLSQ) — while α drifts to −0.005 (100.5% error)
+  because the α-step operates on an α-blind residual. NLLSQ, initialized at
+  the true α=1.0, drifts to 0.908 over 3000 epochs without plateau, and its
+  solution R² *degrades* with training (0.44 → 0.31). The historical
+  «NLLSQ recovers α ≈ 0.965» was an initialization artifact; the historical
+  «VarPro fails (178%)» was an implementation artifact. Lesson recorded
+  in-notebook: an identifiable benchmark needs a source independent of the
+  unknown.
+- **Double pendulum PINN (fixed and re-run 2026-10-07).** Two data-handling
+  bugs from the audit were fixed — the initial-condition loss is now
+  evaluated at t=0 (it used to land on a random shuffled batch point) and
+  the energy-variation penalty is computed on time-sorted points — and a
+  numerical comparison against the `solve_ivp` reference was added. Final
+  training loss **0.00198** (epoch 199/200; the old 0.0244 was an
+  epoch-100 intermediate of the buggy run). The new reference metrics tell
+  the honest story: relative L2 error **0.86–0.97 per component** and
+  energy drift ~36 J — the PINN drives its residuals down yet does **not**
+  reproduce the chaotic reference trajectory. Low training loss ≠ correct
+  solution; both facts are reported side by side.
 - **Neural ODE classification benchmarks.** Re-run 2026-10-07 on an
   RTX 5070 Ti (seed 42); the notebook now persists metrics through an
   added `FINAL_METRICS` print, since its progress bars alone store no
@@ -116,33 +124,45 @@ from memory:
   (stretching the plane instead of separating the annuli, matching
   Dupont et al. 2019). Concentric circles, ANODE with one augmented
   dimension (100 epochs): test accuracy **1.0**, test loss **5.69e-6**.
-- **Oregonator surrogate.** Training loss plateaued at ≈ 0.078 after ~100
-  epochs (1000 epochs run); test loss 0.346 on the held-out tail of the
-  trajectory. Caveat: the MSE is computed on an `[N,1]` vs `[N]` broadcast in
-  **both** the train and test cells (PyTorch warns explicitly in the
-  notebook), so each figure averages an N×N broadcast matrix rather than the
-  true per-point MSE — mathematically a pessimistic upper bound
-  (`MSE_broadcast = MSE_real + 2·Cov`), so direction (plateau,
-  generalization gap) is meaningful, the absolute values less so. No seed or
-  weights are saved, so the numbers are not reproducible as-is.
+- **Oregonator surrogate (broadcast bug fixed 2026-10-07).** The MSE was
+  computed on an `[N,1]` vs `[N]` broadcast in both train and test; with
+  matching shapes (`.squeeze(-1)`), the real numbers are **1.28e-6 train /
+  1.48e-5 test** (seed 42, weights saved). The previously reported
+  0.078/0.346 were the pessimistic `MSE + 2·Cov` broadcast bound — the
+  model converges; it never plateaued at 0.078. The code still solves a
+  temporal ODE (diffusion/advection coefficients defined and unused), now
+  stated in-notebook.
 
 <div class="chart-block"><script type="application/json" class="chart-data">
-{"type":"bar","title":"Oregonator surrogate — train plateau vs held-out test loss (generalization gap; broadcast-MSE caveat applies)","xLabel":"evaluation set","yLabel":"MSE loss (broadcast caveat)","labels":["train (plateau, ~epoch 100)","test (held-out tail)"],"datasets":[{"label":"MSE","data":[0.078,0.346]}],"values":true,"source":"neural-pdes-solver/RDA-DN-NA.ipynb cells 23-24"}
+{"type":"bar","title":"Oregonator surrogate — real MSE after broadcast-shape fix (seed 42, 2026-10-07)","xLabel":"evaluation set","yLabel":"MSE (log scale)","logScale":true,"labels":["train","test (held-out tail)"],"datasets":[{"label":"MSE","data":[0.00000128,0.0000148]}],"values":true,"source":"neural-pdes-solver/RDA-DN-NA.ipynb FINAL_METRICS (post-fix re-run)"}
 </script></div>
-- **SIR / COVID.** The SVI loss stayed flat at ≈ 1.597e7 across all printed
-  iterations and the inferred β and γ both returned 0.20000000298 — exactly
-  the initialization. The inference did not converge.
+- **SIR / COVID (fixed 2026-10-07).** The original run did not converge —
+  flat ELBO, β = γ = initialization. The fix traced the root cause to
+  **I(0) = 0**: the CSV's first 38 days have zero infected, which freezes
+  the Euler dynamics and kills every gradient (a scale-only hypothesis was
+  insufficient — normalization alone kept the loss flat). Trimming to days
+  with cases (from 2020-02-29) plus population-fraction normalization made
+  SVI converge: **β = 0.193, γ = 0.119, R₀ ≈ 1.62**, ELBO down 62%
+  (29,476 → 11,187 over 2000 iterations, monotone). Failure → diagnosed →
+  fixed, all three states preserved in the notebook.
 
 ## Results
 
-- A working **domain-decomposed PINN** for the double pendulum that fits the
-  reference trajectory over t ∈ [0, 2] to a logged loss of 0.024, with
-  interface continuity and an energy-variation penalty built into the loss.
-- A **validated-success / documented-failure pair** for inverse problems:
-  NLLSQ recovers the Poisson coefficient α within 3.7%, while the VarPro
-  variant as implemented converges to a physically wrong value — a useful,
-  concrete illustration that variable projection is not automatically the
-  better option in this PDE setting.
+- A **domain-decomposed PINN** for the double pendulum with interface
+  continuity and an energy-variation penalty, whose 2026-10-07 audit-driven
+  fix cycle (IC at t=0, sorted energy penalty, numerical reference
+  comparison) turned a misleadingly low loss into an honest verdict: final
+  loss 0.00198 **with** relative L2 error 0.86–0.97 vs `solve_ivp` — the
+  residuals fit, the chaotic trajectory is not reproduced.
+- A **benchmark identifiability finding** for the inverse Poisson problem:
+  the manufactured source makes α unrecoverable *by construction*, proven
+  by a correct Golub–Pereyra VarPro that recovers the solution field to
+  machine precision (R² 1.0, 3.2e-13) in 1/10 of NLLSQ's time while α
+  stays unidentified — plus the correction of two historical overclaims
+  («recovers 0.965» was an init artifact; «VarPro fails 178%» was an
+  implementation artifact).
+- A **fixed-from-failure SIR inference**: the COVID SVI now converges
+  (β=0.193, γ=0.119, R₀≈1.62) after diagnosing I(0)=0 as the root cause.
 - A **reproduction of the known NODE topology limitation** (homeomorphism
   constraint) and its resolution via augmentation, verified numerically on
   the canonical concentric-circles benchmark.
@@ -150,21 +170,20 @@ from memory:
 ## Honest caveats
 
 - **Everything here is demonstrated on synthetic or benchmark problems.** The
-  Poisson problem uses a manufactured solution; the Oregonator data is
-  generated by my own RK4; the NODE experiments are 2D toy datasets. The
-  only real-data experiment (COVID SIR inference) did not converge, and I
-  report it as such rather than hiding it.
-- The inverse-Poisson solution-field metrics are modest (MSE 0.056, R² 0.44
-  on NLLSQ), so the 3.7% α error should be read as "parameter recovered
-  correctly despite an imperfect surrogate field", not as a high-fidelity
-  solver.
-- The VarPro run's failure to recover α is not a literature claim — it is
-  what this particular implementation did on this problem instance.
-- The double pendulum energy penalty is computed over shuffled minibatch
-  order rather than the time-ordered trajectory, so it regularizes energy
-  variation only in expectation over batches, not pointwise along the orbit.
-- Results were produced on a single 8 GB consumer GPU; no seed sweeps,
-  uncertainty quantification, or cross-run variance analysis were performed.
-- The notebooks are research code: warnings left unfixed, some Spanish
-  commentary, and no packaging or tests. This is an exploratory sandbox,
-  not a shipped library.
+  Poisson problem uses a manufactured solution (one whose source term, as
+  the 2026-10-07 analysis showed, makes α unidentifiable); the Oregonator
+  data is generated by my own RK4; the NODE experiments are 2D toy datasets.
+  The one real-data experiment (COVID SIR inference) initially failed and
+  was fixed by diagnosing I(0)=0 — both states are reported.
+- The double-pendulum PINN is a prime example of why training loss alone
+  certifies nothing: 0.00198 loss coexists with ~0.9 relative L2 error
+  against the reference on this chaotic system.
+- The 2026-10-07 audit-and-fix cycle (VarPro re-implementation, shape fixes,
+  IC-at-t=0) was driven by this portfolio's own verification standard; the
+  pre-fix numbers remain in git history and the notebooks' prose for
+  traceability.
+- Results were produced on a single consumer GPU (RTX 5070 Ti Laptop, 12 GB);
+  no seed sweeps, uncertainty quantification, or cross-run variance analysis
+  were performed. Seed 42 is fixed where noted (RDA, SD-ODEs).
+- The notebooks are research code: some Spanish commentary, and no packaging
+  or tests. This is an exploratory sandbox, not a shipped library.
