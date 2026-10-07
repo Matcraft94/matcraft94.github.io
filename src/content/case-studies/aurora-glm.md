@@ -51,7 +51,7 @@ not assumed.
   **1.4 × 10⁻¹³** (pure floating-point noise).
 
 <div class="chart-block"><script type="application/json" class="chart-data">
-{"type":"bar","title":"Coefficient agreement vs reference implementations (max deviation, log scale)","xLabel":"distribution family","yLabel":"max |Δ coefficient| (log)","labels":["Gaussian","Poisson","Binomial","Gamma"],"datasets":[{"label":"vs statsmodels","data":[1e-11,1e-10,1e-9,2e-6]}],"yLog":true,"source":"Aurora-GLM/benchmarks/PERFORMANCE.md"}
+{"type":"bar","title":"Coefficient agreement vs reference implementations (max deviation, log scale)","xLabel":"distribution family","yLabel":"max |Δ coefficient| (log)","labels":["Gaussian","Poisson","Binomial","Gamma"],"datasets":[{"label":"vs statsmodels","data":[1e-11,1e-10,1e-9,2e-6]}],"yLog":true,"values":true,"source":"Aurora-GLM/benchmarks/PERFORMANCE.md"}
 </script></div>
 
 - **3,200+ test suite**, with `mypy` and `ruff` clean in CI.
@@ -65,13 +65,19 @@ not assumed.
   large-scale fits.
 
 <div class="chart-block"><script type="application/json" class="chart-data">
-{"type":"bar","title":"PyTorch CUDA speedup over NumPy by problem size (log scale)","xLabel":"problem size n","yLabel":"speedup × (log)","labels":["n=1,000","n=5,000","n=50,000"],"datasets":[{"label":"Gaussian","data":[9.2,39.4,116]},{"label":"Poisson","data":[6.8,27.9,141]}],"yLog":true,"source":"Aurora-GLM/benchmarks/PERFORMANCE.md"}
+{"type":"bar","title":"PyTorch CUDA speedup over NumPy by problem size (log scale)","xLabel":"problem size n","yLabel":"speedup × (log)","labels":["n=1,000","n=5,000","n=50,000"],"datasets":[{"label":"Gaussian","data":[9.2,39.4,116]},{"label":"Poisson","data":[6.8,27.9,141]}],"yLog":true,"values":true,"source":"Aurora-GLM/benchmarks/PERFORMANCE.md"}
+</script></div>
+
+<div class="chart-block"><script type="application/json" class="chart-data">
+{"type":"bar","title":"Absolute fit time — NumPy vs PyTorch CUDA (seconds, log scale)","xLabel":"problem size n","yLabel":"seconds (log)","labels":["n=1,000","n=5,000","n=50,000"],"datasets":[{"label":"Gaussian · NumPy CPU","data":[0.042,0.206,2.1]},{"label":"Gaussian · CUDA","data":[0.005,0.005,0.018]},{"label":"Poisson · NumPy CPU","data":[0.104,0.429,4.3]},{"label":"Poisson · CUDA","data":[0.015,0.015,0.03]}],"yLog":true,"values":true,"source":"Aurora-GLM/benchmarks/PERFORMANCE.md"}
 </script></div>
 
 The GPU advantage is not a constant factor — it grows with problem size,
 because the CUDA backend amortizes kernel-launch overhead only once the
-IRLS iterations carry enough work. At small n, plain NumPy wins, and the
-honest trade-off section of the performance guide says so.
+IRLS iterations carry enough work. At the largest size, a 4.3-second
+Poisson fit drops to 0.030 s — that ~2-decade gap in the runtime chart is
+the 141×. At small n, plain NumPy wins, and the honest trade-off section
+of the performance guide says so.
 - Used as the reference implementation in my own applied work, where the
   GAMM random-effects machinery handles repeated-measures designs that
   standard gradient boosting cannot model natively.
