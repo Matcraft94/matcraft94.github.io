@@ -162,3 +162,14 @@ model of the whole effort: **MAE 5,658 and MAPE 33.6 (−22% / −55% vs the
 published model)** with two text columns replacing 300 TF-IDF features,
 and RMSLE down 22%. The Q5 segment still holds at ~24.6k MAE — now with
 the ceiling quantified.
+
+The final round squeezed what was left: out-of-fold target encoding, a
+**median objective** (optimize the metric the business reads), monotone
+constraints, a tuned grid, and ensembling. The median-objective model is
+the pick: **MAE 5,313 and MAPE 26.6 — a 27% / 56% cut from the published
+model** — with the best expensive-claims quintile of the whole effort.
+Measured against an interaction-aware ceiling (Initial × text-severity
+grouping, R²log 0.835), every model lands at 0.858–0.864: above what
+grouped information can explain. The remaining error is not in these
+features; improving further would need data the claim file does not
+contain.
