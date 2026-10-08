@@ -137,3 +137,14 @@ best RMSE (22,871) and R² (0.344)**. Equally instructive: fixing the leaky
 split *alone* made things worse — the real gains came from matching the
 objective to the loss distribution, not from methodology hygiene. The
 expensive-claims segment (>Q5) remains the dominant, unsolved error.
+
+A second round (`glm_gam_experiment.R`) added classic actuarial families
+under the identical protocol — elastic-net GLM, Gamma GLM, mgcv GAM, GAMM
+with a year random effect, and a two-part **hurdle** model (P(claim>$50k) ×
+Gamma severity). The hurdle posts the project's best RMSE (22,800) and R²
+(0.348); the GAM's splines beat the linear GLM by 10k RMSE but lose to
+boosting on MAE; the year random effect contributes exactly nothing (GAM ≡
+GAMM — thousands of claims per year collapse the RE variance); the Gamma
+GLM diverged even winsorized (documented failure). No family cracks the
+expensive-claims quintile — ~25k MAE everywhere, the segment where reserve
+accuracy actually matters.
