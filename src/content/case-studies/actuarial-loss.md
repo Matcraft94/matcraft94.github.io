@@ -148,3 +148,17 @@ GAMM — thousands of claims per year collapse the RE variance); the Gamma
 GLM diverged even winsorized (documented failure). No family cracks the
 expensive-claims quintile — ~25k MAE everywhere, the segment where reserve
 accuracy actually matters.
+
+A third round finally measured *why*: a distribution study showed
+**`InitialIncurredCalimsCost` alone explains 76% of the log-cost variance**,
+leaving a within-group residual SD of 0.74 in log space — the
+expensive-claims error floor is information-theoretic, not a modeling
+failure (24% of cheapest-decile claims blow up past 3× their initial
+estimate vs 6% in the top decile: development surprise concentrated
+exactly where initial estimates are smallest). Guided by that study,
+target-encoded text severity (the feature the original analysis computed
+but never used) plus an Initial-percentile encoding produced the best
+model of the whole effort: **MAE 5,658 and MAPE 33.6 (−22% / −55% vs the
+published model)** with two text columns replacing 300 TF-IDF features,
+and RMSLE down 22%. The Q5 segment still holds at ~24.6k MAE — now with
+the ceiling quantified.
