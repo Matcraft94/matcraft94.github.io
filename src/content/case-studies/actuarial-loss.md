@@ -34,8 +34,15 @@ tail drives most of the financial exposure.
 
 ## Method
 
-The full pipeline is implemented in R with tidymodels, in `analysis.Rmd`
-(renamed from the original `trabajo_final_E_ARIAS.Rmd`):
+The project now runs as a **production pipeline** (October 2026 refactor):
+shared R functions (`R/`), a `targets` DAG with caching, and a living
+report — [`reports/improvement-2026.Rmd`](https://github.com/Matcraft94/ds-projects/tree/develop/actuarial-loss-prediction/reports)
+— whose every table is read from the pipeline's own outputs, never
+transcribed by hand. One container command regenerates the entire campaign.
+
+The original 2025 analysis is preserved as the historical document
+(`analysis.Rmd` / `analysis.html`, in R with tidymodels; renamed from the
+course's `trabajo_final_E_ARIAS.Rmd`):
 
 - **EDA and cleaning** — missing-value analysis (a small share of categorical
   gaps), skewness/kurtosis of the target, and temporal analysis of
