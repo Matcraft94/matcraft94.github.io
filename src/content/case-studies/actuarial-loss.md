@@ -123,3 +123,17 @@ Reported in the document's evaluation sections:
   22,217/25,034; top gain 0.838 vs 0.879) — package-version drift and/or row
   ordering. The published metrics belong to the original 2025 environment,
   preserved in the rendered report, which remains the source of record.
+
+## What improving the model taught me (2026-10-07)
+
+After the audit I ran a controlled three-arm experiment (same container,
+data, seed; `improved_model.R` in the repo): the original design with only
+the audit fixes, the same plus a `log1p` target and TF-IDF text features,
+and an XGBoost Tweedie variant. The honest scoreboard: a **log-target
+model cuts MAE to 6,050 (−17% vs the published model)** and quintile MAE
+for cheap-to-mid claims drops 3–5×, because the squared-dollar objective
+had been ignoring the majority of claims; the **Tweedie variant posts the
+best RMSE (22,871) and R² (0.344)**. Equally instructive: fixing the leaky
+split *alone* made things worse — the real gains came from matching the
+objective to the loss distribution, not from methodology hygiene. The
+expensive-claims segment (>Q5) remains the dominant, unsolved error.
