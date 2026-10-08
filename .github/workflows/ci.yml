@@ -1,0 +1,74 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+jobs:
+  build-validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Build
+        run: npm run build
+      - name: Validate chart JSON blocks
+        run: |
+          node -e '
+          const fs = require("fs"), path = require("path");
+          const glob = (d) => fs.readdirSync(d, {withFileTypes: true}).flatMap(e =>
+            e.isDirectory() ? glob(path.join(d, e.name)) : [path.join(d, e.name)]);
+          let n = 0, fail = 0;
+          for (const f of glob("src/content")) {
+            if (!f.endsWith(".md")) continue;
+            const txt = fs.readFileSync(f, "utf8");
+            for (const m of txt.matchAll(/<script type="application\/json" class="chart-data">([\s\S]*?)<\/script>/g)) {
+              n++;
+              try {
+                const j = JSON.parse(m[1]);
+                if (!j.type || !j.labels || !j.datasets?.length) throw new Error("missing fields");
+                for (const ds of j.datasets) {
+                  if (!Array.isArray(ds.data) || ds.data.length !== j.labels.length)
+                    throw new Error("data/labels length mismatch");
+                  if (ds.data.some(x => typeof x !== "number" || !isFinite(x)))
+                    throw new Error("non-finite value");
+                }
+              } catch (e) { fail++; console.error(`FAIL ${f}: ${e.message}`); }
+            }
+          }
+          console.log(`charts validated: ${n}, failures: ${fail}`);
+          if (fail > 0) process.exit(1);
+          '
+      - name: Check internal links resolve
+        run: |
+          node -e '
+          const fs = require("fs"), path = require("path");
+          const glob = (d) => fs.readdirSync(d, {withFileTypes: true}).flatMap(e =>
+            e.isDirectory() ? glob(path.join(d, e.name)) : [path.join(d, e.name)]);
+          const pages = new Set();
+          for (const f of glob("src/content")) {
+            const base = path.basename(f, ".md");
+            const dir = path.basename(path.dirname(f));
+            if (dir === "case-studies") pages.add(`/case-studies/${base}/`);
+            if (dir === "publications") pages.add(`/publications/${base}/`);
+          }
+          let bad = 0;
+          for (const f of glob("src")) {
+            if (!/\.(md|astro)$/.test(f)) continue;
+            const txt = fs.readFileSync(f, "utf8");
+            for (const m of txt.matchAll(/\]\((\/[a-z0-9\-\/]*)\)/g)) {
+              const p = m[1];
+              if (p === "/" || /\.(png|pdf|svg|css|js)$/.test(p)) continue;
+              if (!pages.has(p) && !fs.existsSync("public" + p)) {
+                bad++; console.error(`BROKEN ${f} -> ${p}`);
+              }
+            }
+          }
+          console.log(`internal links checked, broken: ${bad}`);
+          if (bad > 0) process.exit(1);
+          '
