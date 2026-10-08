@@ -111,5 +111,15 @@ Reported in the document's evaluation sections:
 - **Uncertainty claims outpace the code.** The narrative mentions providing
   uncertainty estimates, but no quantile regression, bootstrap, or interval
   construction appears in the notebook.
-- The dataset's exact public-competition provenance could not be verified from
-  the repository (no data dictionary or competition link is included).
+- **The dataset's exact public-competition provenance could not be verified from
+  the repository (no data dictionary or competition link is included).**
+  (Update 2026-10-07: identified as the Kaggle competition *Actuarial Loss
+  Prediction* — workers' compensation, 54,000 training claims — and the data
+  re-downloaded from a public mirror; header matches, including the upstream
+  `CalimsCost` typo.)
+- **Numbers are environment-bound.** A 2026-10-07 re-run with identical seeds
+  (123/345) and the mirror data executes the full pipeline but lands on
+  different figures (train/test RMSE 29,032/26,355 vs the original
+  22,217/25,034; top gain 0.838 vs 0.879) — package-version drift and/or row
+  ordering. The published metrics belong to the original 2025 environment,
+  preserved in the rendered report, which remains the source of record.
