@@ -213,3 +213,91 @@ body {
   border-radius: 0.5rem;
   border: 1px solid var(--color-ink-3);
 }
+
+.prose-invert .flow-diagram {
+  margin: 2rem 0 0;
+  padding: 1rem;
+  border: 1px solid var(--color-ink-3);
+  border-radius: 0.5rem;
+  background: var(--color-ink-2);
+}
+
+.prose-invert .flow-steps {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1.25rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.prose-invert .flow-steps li {
+  position: relative;
+  padding: 1rem;
+  border: 1px solid var(--color-ink-3);
+  border-radius: 0.375rem;
+  background: var(--color-ink);
+}
+
+.prose-invert .flow-steps li:not(:last-child)::after {
+  content: "↓";
+  position: absolute;
+  bottom: -1.35rem;
+  left: 1rem;
+  color: var(--color-accent);
+  line-height: 1;
+}
+
+.prose-invert .flow-step-number {
+  display: block;
+  margin-bottom: 0.5rem;
+  color: var(--color-accent);
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+}
+
+.prose-invert .flow-steps strong {
+  display: block;
+  font-size: 0.85rem;
+  line-height: 1.4;
+}
+
+.prose-invert .flow-steps p {
+  margin: 0.5rem 0 0;
+  color: var(--color-muted);
+  font-size: 0.78rem;
+  line-height: 1.5;
+}
+
+.prose-invert .flow-diagram figcaption {
+  margin-top: 1rem;
+  color: var(--color-muted);
+  font-size: 0.8rem;
+  line-height: 1.6;
+}
+
+@media (min-width: 640px) {
+  .prose-invert .flow-steps {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .prose-invert .flow-steps li::after {
+    display: none;
+  }
+}
+
+@media (min-width: 900px) {
+  .prose-invert .flow-steps {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 1rem;
+  }
+
+  .prose-invert .flow-steps li:not(:last-child)::after {
+    display: block;
+    content: "→";
+    top: 1.75rem;
+    right: -1rem;
+    bottom: auto;
+    left: auto;
+  }
+}

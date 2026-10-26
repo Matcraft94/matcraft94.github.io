@@ -8,14 +8,16 @@ Built with [Astro](https://astro.build) + Tailwind CSS v4. Content lives in `src
 
 ```
 src/
+├── components/
+│   └── CaseStudyCard.astro # shared project cards
 ├── content/
 │   ├── case-studies/     # one file per case study (problem → method → evidence → result)
-│   ├── publications/     # publication entries
-│   └── blog/             # (reserved)
+│   └── publications/     # publication entries
 ├── layouts/Base.astro    # shared layout: nav, footer, theme
 └── pages/
     ├── index.astro       # landing: positioning, featured work, publications
     ├── about.astro
+    ├── research.astro    # mathematical and scientific research
     ├── case-studies/     # listing + [slug] detail
     └── publications/     # listing + [slug] detail
 ```

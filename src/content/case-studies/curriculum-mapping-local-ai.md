@@ -70,6 +70,37 @@ An offline index of 6,090,985 Spanish Wikipedia articles supplies an additional
 entity-linking and evidence-enrichment step. A variational graph autoencoder is
 also explored as a source of candidate links, not as an automatic source of truth.
 
+<figure class="flow-diagram" aria-labelledby="curriculum-flow-caption">
+  <ol class="flow-steps" role="list">
+    <li>
+      <span class="flow-step-number">01</span>
+      <strong>Source documents</strong>
+      <p>Clean and join course content from the institutional syllabi.</p>
+    </li>
+    <li>
+      <span class="flow-step-number">02</span>
+      <strong>Candidate retrieval</strong>
+      <p>Rank course pairs using embeddings and curricular levels.</p>
+    </li>
+    <li>
+      <span class="flow-step-number">03</span>
+      <strong>Local model review</strong>
+      <p>Produce structured relationship judgments with a local LLM.</p>
+    </li>
+    <li>
+      <span class="flow-step-number">04</span>
+      <strong>Graph validation</strong>
+      <p>Check coverage, connectivity, cycles, and possible gaps.</p>
+    </li>
+    <li>
+      <span class="flow-step-number">05</span>
+      <strong>Expert review</strong>
+      <p>Present evidence for experts to accept, adjust, or reject.</p>
+    </li>
+  </ol>
+  <figcaption id="curriculum-flow-caption">Documents and model calls stay local. The pipeline proposes relationships; curriculum experts make the final decisions.</figcaption>
+</figure>
+
 ## Evidence
 
 For the Medicine reference program, the documented run produced:
