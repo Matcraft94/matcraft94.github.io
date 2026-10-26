@@ -11,18 +11,34 @@ export async function getStaticPaths() {
 
 const { study } = Astro.props;
 const { Content } = await render(study);
+const projectStatusLabels = {
+  'production': 'In production',
+  'open-source': 'Open source',
+  'research-in-progress': 'Research in progress',
+  'experiment': 'Experiment',
+};
+const codeAvailabilityLabels = {
+  'public': 'Public source',
+  'partial': 'Partial source availability',
+  'private': 'Private code · sanitized case',
+};
 ---
 
 <Base title={study.data.title} description={study.data.description}>
   <article class="max-w-3xl mx-auto px-6 pt-16 pb-8">
-    <a href="/case-studies/" class="font-mono text-xs text-muted hover:text-accent transition-colors">← case studies</a>
-    <div class="mt-6 font-mono text-xs text-accent-2 uppercase tracking-widest">{study.data.category}</div>
-    <h1 class="mt-3 text-3xl sm:text-4xl font-bold leading-tight">{study.data.title}</h1>
+    <a href="/case-studies/" class="text-sm text-muted hover:text-accent transition-colors">← All work</a>
+    <div class="mt-8 flex flex-wrap gap-2 text-xs">
+      <span class="rounded-full border border-ink-3 px-3 py-1 text-accent-2">{projectStatusLabels[study.data.projectStatus]}</span>
+      <span class="rounded-full border border-ink-3 px-3 py-1 text-muted">{codeAvailabilityLabels[study.data.codeAvailability]}</span>
+    </div>
+    <h1 class="mt-5 text-3xl sm:text-4xl font-bold leading-tight">{study.data.title}</h1>
     {study.data.subtitle && <p class="mt-4 text-lg text-muted leading-relaxed">{study.data.subtitle}</p>}
+    <p class="mt-5 leading-7 text-paper/85">{study.data.description}</p>
     <div class="mt-5 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-muted">
       <span class="font-mono">{study.data.pubDate.toISOString().slice(0, 10)}</span>
+      <span>{study.data.category.replaceAll('-', ' ')}</span>
       {study.data.repo && (
-        <a href={study.data.repo} class="font-mono text-accent hover:underline">source ↗</a>
+        <a href={study.data.repo} class="text-accent hover:underline">View source ↗</a>
       )}
     </div>
     {study.data.metrics && (

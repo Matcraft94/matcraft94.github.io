@@ -6,8 +6,10 @@ category: "quantitative-finance"
 tags: ["hawkes-processes", "hft", "numba", "cython", "time-series", "backtesting"]
 repo: "https://github.com/Matcraft94/ds-projects/tree/develop/hawkes-order-flow"
 pubDate: 2026-02-10
-featured: true
+featured: false
 status: "published"
+projectStatus: "experiment"
+codeAvailability: "public"
 metrics:
   - label: "Estimation speedup"
     value: "~10,000×"

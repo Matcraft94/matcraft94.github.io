@@ -8,6 +8,8 @@ repo: "https://github.com/Matcraft94/ds-projects/tree/develop/academic-performan
 pubDate: 2024-05-12
 featured: false
 status: "published"
+projectStatus: "experiment"
+codeAvailability: "public"
 metrics:
   - label: "Held-out test accuracy"
     value: "0.88"

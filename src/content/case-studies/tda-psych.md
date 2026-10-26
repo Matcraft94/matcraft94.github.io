@@ -7,6 +7,8 @@ tags: ["tda", "persistent-homology", "mapper", "psychometrics", "irt", "topologi
 pubDate: 2026-03-07
 featured: false
 status: "published"
+projectStatus: "research-in-progress"
+codeAvailability: "partial"
 metrics:
   - label: "Test functions"
     value: "846"

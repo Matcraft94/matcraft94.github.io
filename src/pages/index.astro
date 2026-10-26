@@ -1,84 +1,127 @@
 ---
 import Base from '../layouts/Base.astro';
+import CaseStudyCard from '../components/CaseStudyCard.astro';
 import { getCollection } from 'astro:content';
 
-const studies = (await getCollection('caseStudies'))
-  .filter((s) => s.data.status === 'published')
-  .sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf());
-const featured = studies.filter((s) => s.data.featured);
+const studies = await getCollection('caseStudies', (study) => study.data.status === 'published');
+const featured = studies
+  .filter((study) => study.data.featured)
+  .sort((a, b) => (a.data.featuredOrder ?? Number.MAX_SAFE_INTEGER) - (b.data.featuredOrder ?? Number.MAX_SAFE_INTEGER));
 const publications = (await getCollection('publications')).sort((a, b) => b.data.year - a.data.year);
 ---
 
-<Base title="Home">
-  <section class="max-w-5xl mx-auto px-6 pt-20 pb-16">
-    <p class="font-mono text-xs text-accent tracking-widest uppercase mb-4">Mathematical Engineer · Data Scientist</p>
-    <h1 class="text-4xl sm:text-5xl font-bold leading-tight max-w-3xl">
-      Statistical rigor, production code,<br />auditable AI.
-    </h1>
-    <p class="mt-6 text-muted text-lg max-w-2xl leading-relaxed">
-      I work at the two gaps that are usually open: between statistical rigor and production code,
-      and between experimental AI and auditable AI. I build quantitative systems — from Hawkes-process
-      order flow models to psychometric pipelines serving institutional decisions — where nothing ships
-      without formal evidence and passing tests.
-    </p>
-    <div class="mt-8 flex flex-wrap gap-4">
-      <a href="/case-studies/" class="px-5 py-2.5 bg-accent text-ink font-medium text-sm rounded hover:opacity-90 transition-opacity">
-        View case studies
-      </a>
-      <a href="/cv-eduardo-arias-en.pdf" class="px-5 py-2.5 border border-ink-3 text-sm rounded hover:border-accent hover:text-accent transition-colors">
-        CV (EN)
-      </a>
-      <a href="mailto:mat.eduardo.arias@outlook.com" class="px-5 py-2.5 border border-ink-3 text-sm rounded hover:border-accent hover:text-accent transition-colors">
-        Get in touch
-      </a>
-    </div>
-  </section>
-
-  <section class="max-w-5xl mx-auto px-6 py-12 border-t border-ink-3">
-    <h2 class="font-mono text-xs text-muted tracking-widest uppercase mb-8">Featured work</h2>
-    <div class="grid gap-6 md:grid-cols-2">
-      {featured.map((s) => (
-        <a href={`/case-studies/${s.id}/`} class="block p-6 bg-ink-2 border border-ink-3 rounded-lg hover:border-accent transition-colors group">
-          <div class="font-mono text-xs text-accent-2 mb-2">{s.data.category}</div>
-          <h3 class="text-xl font-semibold group-hover:text-accent transition-colors">{s.data.title}</h3>
-          <p class="mt-2 text-muted text-sm leading-relaxed">{s.data.description}</p>
-          {s.data.metrics && (
-            <div class="mt-4 flex flex-wrap gap-x-6 gap-y-2">
-              {s.data.metrics.slice(0, 3).map((m) => (
-                <div>
-                  <div class="font-mono text-lg text-accent">{m.value}</div>
-                  <div class="text-xs text-muted">{m.label}</div>
-                </div>
-              ))}
-            </div>
-          )}
+<Base title="Applied AI & Mathematical Engineering">
+  <section class="border-b border-ink-3">
+    <div class="max-w-6xl mx-auto px-6 pt-20 pb-18 sm:pt-24 sm:pb-22">
+      <p class="text-sm font-medium text-accent">Eduardo Arias · Applied AI & Mathematical Engineering</p>
+      <h1 class="mt-6 max-w-4xl text-4xl sm:text-6xl font-bold leading-[1.08] tracking-tight">
+        I build AI systems that hold up <span class="text-accent">beyond the demo.</span>
+      </h1>
+      <p class="mt-7 max-w-2xl text-lg sm:text-xl leading-8 text-muted">
+        Local LLMs, retrieval, and machine learning — grounded in mathematics,
+        evaluated against real baselines, and documented with their limitations.
+      </p>
+      <div class="mt-9 flex flex-wrap gap-3">
+        <a href="#selected-work" class="px-5 py-2.5 bg-accent text-ink font-medium text-sm rounded hover:opacity-90 transition-opacity">
+          Explore selected work
         </a>
-      ))}
-    </div>
-  </section>
-
-  <section class="max-w-5xl mx-auto px-6 py-12 border-t border-ink-3">
-    <div class="flex items-center justify-between mb-8">
-      <h2 class="font-mono text-xs text-muted tracking-widest uppercase">All case studies</h2>
-      <a href="/case-studies/" class="text-sm text-accent hover:underline">Browse all →</a>
-    </div>
-    <div class="divide-y divide-ink-3">
-      {studies.map((s) => (
-        <a href={`/case-studies/${s.id}/`} class="flex flex-col sm:flex-row sm:items-baseline sm:justify-between gap-1 py-4 group">
-          <span class="font-medium group-hover:text-accent transition-colors">{s.data.title}</span>
-          <span class="text-sm text-muted font-mono">{s.data.category} · {s.data.pubDate.getFullYear()}</span>
+        <a href="/cv-eduardo-arias-en.pdf" class="px-5 py-2.5 border border-ink-3 text-sm rounded hover:border-accent hover:text-accent transition-colors">
+          Download CV
         </a>
-      ))}
-    </div>
-  </section>
-
-  <section class="max-w-5xl mx-auto px-6 py-12 border-t border-ink-3">
-    <h2 class="font-mono text-xs text-muted tracking-widest uppercase mb-8">Publications</h2>
-    {publications.map((p) => (
-      <div class="py-4 border-b border-ink-3 last:border-0">
-        <div class="text-sm text-muted font-mono mb-1">{p.data.authors} — {p.data.venue}, {p.data.year}</div>
-        <div class="text-lg font-medium">{p.data.title}</div>
+        <a href="mailto:mat.eduardo.arias@outlook.com" class="px-5 py-2.5 text-sm text-muted hover:text-accent transition-colors">
+          Get in touch →
+        </a>
       </div>
-    ))}
+    </div>
+  </section>
+
+  <section id="selected-work" class="max-w-6xl mx-auto px-6 py-16 scroll-mt-8">
+    <div class="flex flex-wrap items-end justify-between gap-3 mb-8">
+      <div>
+        <p class="text-xs font-medium text-accent-2">SELECTED WORK</p>
+        <h2 class="mt-2 text-2xl sm:text-3xl font-semibold">Systems, evidence, and decisions</h2>
+      </div>
+      <a href="/case-studies/" class="text-sm text-accent hover:underline">View all work →</a>
+    </div>
+    <div class="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+      {featured.map((study) => <CaseStudyCard study={study} />)}
+    </div>
+  </section>
+
+  <section class="border-y border-ink-3 bg-ink-2/40">
+    <div class="max-w-6xl mx-auto px-6 py-14 grid gap-10 lg:grid-cols-[1.2fr_1fr] lg:items-center">
+      <div>
+        <p class="text-xs font-medium text-accent-2">PRODUCTION EXPERIENCE</p>
+        <h2 class="mt-3 text-2xl sm:text-3xl font-semibold">One institutional ecosystem, not twenty disconnected repositories</h2>
+        <p class="mt-5 max-w-2xl leading-7 text-muted">
+          At CEIE, I build and maintain connected systems for data capture, ETL,
+          psychometric modeling, business intelligence, and mass reporting. The
+          important work is not only each model: it is the contracts and quality
+          controls that keep the whole chain reliable.
+        </p>
+        <a href="/case-studies/ceie-production-ecosystem/" class="inline-block mt-6 text-sm text-accent hover:underline">
+          Read the sanitized production case →
+        </a>
+      </div>
+      <dl class="grid grid-cols-3 gap-4 border-l border-ink-3 pl-6">
+        <div>
+          <dt class="text-xs leading-5 text-muted">Production repositories</dt>
+          <dd class="mt-2 font-mono text-2xl text-accent">~20</dd>
+        </div>
+        <div>
+          <dt class="text-xs leading-5 text-muted">Power BI semantic models</dt>
+          <dd class="mt-2 font-mono text-2xl text-accent">8</dd>
+        </div>
+        <div>
+          <dt class="text-xs leading-5 text-muted">Students in survey population</dt>
+          <dd class="mt-2 font-mono text-2xl text-accent">15K+</dd>
+        </div>
+      </dl>
+    </div>
+  </section>
+
+  <section class="max-w-6xl mx-auto px-6 py-16">
+    <div class="grid gap-10 lg:grid-cols-[0.8fr_1.2fr]">
+      <div>
+        <p class="text-xs font-medium text-accent-2">RESEARCH & EXPERIMENTS</p>
+        <h2 class="mt-3 text-2xl sm:text-3xl font-semibold">Mathematics is part of the engineering</h2>
+        <p class="mt-5 leading-7 text-muted">
+          My research connects optimization, statistical modeling, and scientific
+          computing. Experiments include negative results when that is what the
+          evidence shows.
+        </p>
+        <a href="/research/" class="inline-block mt-6 text-sm text-accent hover:underline">Explore research →</a>
+      </div>
+      <div class="divide-y divide-ink-3 border-y border-ink-3">
+        <a href="/case-studies/rag-architecture-evaluation/" class="group block py-5">
+          <h3 class="font-medium group-hover:text-accent transition-colors">RAG architecture evaluation</h3>
+          <p class="mt-1 text-sm leading-6 text-muted">Controlled comparison of six retrieval designs on an institutional corpus.</p>
+        </a>
+        <a href="/case-studies/tda-psych/" class="group block py-5">
+          <h3 class="font-medium group-hover:text-accent transition-colors">Psychometrics and topological data analysis</h3>
+          <p class="mt-1 text-sm leading-6 text-muted">Persistent homology with mathematical validation and reproducible case studies.</p>
+        </a>
+        <a href="/case-studies/neural-pdes/" class="group block py-5">
+          <h3 class="font-medium group-hover:text-accent transition-colors">Scientific machine learning</h3>
+          <p class="mt-1 text-sm leading-6 text-muted">PINNs and neural ODEs for forward and inverse differential-equation problems.</p>
+        </a>
+        <a href="/case-studies/hawkes-order-flow/" class="group block py-5">
+          <h3 class="font-medium group-hover:text-accent transition-colors">Quantitative research</h3>
+          <p class="mt-1 text-sm leading-6 text-muted">Hawkes processes and walk-forward experiments, including honest out-of-sample results.</p>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <section class="max-w-6xl mx-auto px-6 pb-12">
+    <div class="border-t border-ink-3 pt-10">
+      <p class="text-xs font-medium text-accent-2">PEER-REVIEWED PUBLICATION</p>
+      {publications.map((publication) => (
+        <a href={`/publications/${publication.id}/`} class="group mt-4 block max-w-3xl">
+          <h2 class="text-xl font-medium group-hover:text-accent transition-colors">{publication.data.title}</h2>
+          <p class="mt-2 text-sm text-muted">{publication.data.authors} · {publication.data.venue}, {publication.data.year}</p>
+        </a>
+      ))}
+    </div>
   </section>
 </Base>
