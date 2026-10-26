@@ -69,6 +69,37 @@ generates individualized PDFs and tracks delivery by recipient.
 retrieval, and structured logs. The curriculum-mapping case study describes one
 of these pipelines in detail.
 
+<figure class="flow-diagram" aria-labelledby="ceie-flow-caption">
+  <ol class="flow-steps" role="list">
+    <li>
+      <span class="flow-step-number">01</span>
+      <strong>Operational sources</strong>
+      <p>Connect Moodle, Banner, SICAF, KOBO, Forms, and SharePoint.</p>
+    </li>
+    <li>
+      <span class="flow-step-number">02</span>
+      <strong>Medallion pipelines</strong>
+      <p>Validate and publish documented Parquet tables in star schemas.</p>
+    </li>
+    <li>
+      <span class="flow-step-number">03</span>
+      <strong>Statistical models</strong>
+      <p>Apply psychometric, predictive, and causal methods in one canonical place.</p>
+    </li>
+    <li>
+      <span class="flow-step-number">04</span>
+      <strong>BI and reporting</strong>
+      <p>Deliver semantic models, individualized PDFs, and tracked delivery.</p>
+    </li>
+    <li>
+      <span class="flow-step-number">05</span>
+      <strong>CEIE decisions</strong>
+      <p>Support the center's assessment and institutional review processes.</p>
+    </li>
+  </ol>
+  <figcaption id="ceie-flow-caption">Shared schemas and explicit repository boundaries connect the lifecycle. Quality checks and gaps remain visible at every stage.</figcaption>
+</figure>
+
 ## Evidence and operating controls
 
 - Approximately **20 production repositories** cover capture, ETL, analysis, BI,

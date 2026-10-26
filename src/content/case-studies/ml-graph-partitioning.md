@@ -74,6 +74,37 @@ final integer incumbent, bound, gap, closure rate, and runtime. Every candidate
 partition is checked for exact vertex coverage, component count, and induced
 connectivity.
 
+<figure class="flow-diagram" aria-labelledby="solver-flow-caption">
+  <ol class="flow-steps" role="list">
+    <li>
+      <span class="flow-step-number">01</span>
+      <strong>Candidate columns</strong>
+      <p>Pricing generates possible additions to the master problem.</p>
+    </li>
+    <li>
+      <span class="flow-step-number">02</span>
+      <strong>Retention strategies</strong>
+      <p>Compare reduced-cost rules, learned ranking, and dual smoothing.</p>
+    </li>
+    <li>
+      <span class="flow-step-number">03</span>
+      <strong>Master solver</strong>
+      <p>Optimize over the retained columns and record the trajectory.</p>
+    </li>
+    <li>
+      <span class="flow-step-number">04</span>
+      <strong>Validity checks</strong>
+      <p>Verify exact coverage, component count, and connectivity.</p>
+    </li>
+    <li>
+      <span class="flow-step-number">05</span>
+      <strong>Separate evaluation</strong>
+      <p>Measure LP progress, integer quality, bounds, and runtime.</p>
+    </li>
+  </ol>
+  <figcaption id="solver-flow-caption">Learned ranking and dual smoothing can guide retention. They never replace the solver's feasibility and connectivity checks.</figcaption>
+</figure>
+
 ## Evidence so far
 
 In the F5 fixed-budget regime, the learned retention rule improved the LP
