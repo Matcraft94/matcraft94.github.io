@@ -8,6 +8,8 @@ repo: "https://github.com/Matcraft94/ds-projects/tree/develop/market-risk-analys
 pubDate: 2024-08-10
 featured: false
 status: "published"
+projectStatus: "experiment"
+codeAvailability: "public"
 metrics:
   - label: "Backtest total return"
     value: "-0.20%"

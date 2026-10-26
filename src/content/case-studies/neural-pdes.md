@@ -8,6 +8,8 @@ repo: "https://github.com/Matcraft94/ds-projects/tree/develop/neural-pdes-solver
 pubDate: 2025-06-15
 featured: false
 status: "published"
+projectStatus: "experiment"
+codeAvailability: "public"
 metrics:
   - label: "Inverse Poisson α error (NLLSQ)"
     value: "3.7%"
