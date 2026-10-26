@@ -8,6 +8,8 @@ repo: "https://github.com/Matcraft94/ds-projects/tree/develop/actuarial-loss-pre
 pubDate: 2024-11-20
 featured: false
 status: "published"
+projectStatus: "experiment"
+codeAvailability: "public"
 metrics:
   - label: "RMSE (test)"
     value: "25,034"

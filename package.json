@@ -9,7 +9,10 @@
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
-    "astro": "astro"
+    "astro": "astro",
+    "validate:content": "node scripts/validate-content.mjs",
+    "validate:build": "node scripts/validate-build.mjs",
+    "validate": "npm run validate:content && npm run build && npm run validate:build"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.3.3",

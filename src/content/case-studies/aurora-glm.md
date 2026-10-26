@@ -7,7 +7,10 @@ tags: ["glm", "gam", "statistical-modeling", "pytorch", "jax", "pypi", "open-sou
 repo: "https://github.com/Matcraft94/Aurora-GLM"
 pubDate: 2026-09-14
 featured: true
+featuredOrder: 3
 status: "published"
+projectStatus: "open-source"
+codeAvailability: "public"
 metrics:
   - label: "Max deviation vs R"
     value: "1.4e-13"
@@ -55,7 +58,7 @@ not assumed.
 {"type":"bar","title":"Coefficient agreement vs reference implementations (max deviation, log scale)","xLabel":"distribution family","yLabel":"max |Δ coefficient| (log)","labels":["Gaussian","Poisson","Binomial","Gamma"],"datasets":[{"label":"vs statsmodels","data":[1e-11,1e-10,1e-9,2e-6]}],"yLog":true,"values":true,"source":"Aurora-GLM/benchmarks/PERFORMANCE.md"}
 </script></div>
 
-- **3,200+ test suite**, with `mypy` and `ruff` clean in CI.
+- **3,379-test suite**, with `mypy` and `ruff` clean in CI.
 - Every release validates against the reference implementations again; a
   regression that changes coefficients beyond tolerance blocks the build.
 

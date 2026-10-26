@@ -1,35 +1,31 @@
 ---
 import Base from '../../layouts/Base.astro';
+import CaseStudyCard from '../../components/CaseStudyCard.astro';
 import { getCollection } from 'astro:content';
 
-const studies = (await getCollection('caseStudies'))
-  .filter((s) => s.data.status === 'published')
-  .sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf());
+const studies = (await getCollection('caseStudies', (study) => study.data.status === 'published'))
+  .sort((a, b) => {
+    if (a.data.featured !== b.data.featured) return a.data.featured ? -1 : 1;
+    if (a.data.featured && b.data.featured) {
+      return (a.data.featuredOrder ?? Number.MAX_SAFE_INTEGER) - (b.data.featuredOrder ?? Number.MAX_SAFE_INTEGER);
+    }
+    return b.data.pubDate.valueOf() - a.data.pubDate.valueOf();
+  });
 ---
 
-<Base title="Case Studies" description="Case studies in quantitative finance, scientific ML, and production data systems.">
-  <section class="max-w-5xl mx-auto px-6 pt-16 pb-8">
-    <h1 class="text-3xl font-bold">Case Studies</h1>
-    <p class="mt-3 text-muted max-w-2xl">
-      Each study follows the same structure: problem → method → evidence → result.
-      Code is linked where the repository is public.
+<Base title="Work" description="Selected Applied AI, optimization, data-systems, and mathematical research case studies.">
+  <section class="max-w-6xl mx-auto px-6 pt-16 pb-10">
+    <p class="text-sm font-medium text-accent">WORK</p>
+    <h1 class="mt-3 text-3xl sm:text-4xl font-bold">Selected work & experiments</h1>
+    <p class="mt-4 max-w-2xl leading-7 text-muted">
+      Case studies organized around problems, decisions, and evidence. Project
+      status and code availability are stated explicitly; private institutional
+      work appears only as sanitized case studies.
     </p>
   </section>
-  <section class="max-w-5xl mx-auto px-6 pb-16">
-    <div class="grid gap-6 md:grid-cols-2">
-      {studies.map((s) => (
-        <a href={`/case-studies/${s.id}/`} class="block p-6 bg-ink-2 border border-ink-3 rounded-lg hover:border-accent transition-colors group">
-          <div class="font-mono text-xs text-accent-2 mb-2">{s.data.category}</div>
-          <h2 class="text-xl font-semibold group-hover:text-accent transition-colors">{s.data.title}</h2>
-          {s.data.subtitle && <div class="text-sm text-muted mt-1">{s.data.subtitle}</div>}
-          <p class="mt-3 text-muted text-sm leading-relaxed">{s.data.description}</p>
-          <div class="mt-4 flex flex-wrap gap-2">
-            {s.data.tags.map((t) => (
-              <span class="text-xs font-mono px-2 py-1 bg-ink-3 rounded text-muted">{t}</span>
-            ))}
-          </div>
-        </a>
-      ))}
+  <section class="max-w-6xl mx-auto px-6 pb-16">
+    <div class="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+      {studies.map((study) => <CaseStudyCard study={study} />)}
     </div>
   </section>
 </Base>
